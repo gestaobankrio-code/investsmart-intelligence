@@ -28,3 +28,6 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+- InvestSmart UI styles live in `src/investsmart.css` (ported verbatim from the V12 HTML for visual fidelity); extend it there instead of ad-hoc classes.
+- Google Ads / Trends access happens only in `src/lib/intelligence.functions.ts` server adapters, disabled by flags until access is approved — never call Google from the browser.
