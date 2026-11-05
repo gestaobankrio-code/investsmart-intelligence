@@ -400,7 +400,7 @@ function BrazilMap({ rows, uf, focusUF, threshold, onSelect }: {
             const title = `${UF_NAMES[p.state]} · ${p.count} termos · pico de ${fmtGrowth(p.peak)}`;
             return (
               <button key={p.state} type="button" title={title} aria-label={title}
-                className={"pin" + (burst ? " burst" : "") + (focusUF === p.state ? " selected" : "")}
+                className={"pin" + (PIN_OFFSET[p.state] ? " side" : "") + (burst ? " burst" : "") + (focusUF === p.state ? " selected" : "")}
                 style={{ left: `${(px / 600) * 100}%`, top: `${(py / 600) * 100}%` }}
                 onClick={() => onSelect(p.state)}>
                 {burst ? "✳" : "•"}<span className="pin-label">{p.state}</span>
