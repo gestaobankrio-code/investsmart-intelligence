@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import logo from "@/assets/investsmart-logo.png.asset.json";
-import { BRAZIL_STATES, MAP_VIEWBOX } from "@/data/brazil-map";
+import { BrazilMap, pinCount, type MapCell } from "@/components/BrazilMap";
+import { RealCompare, RealNotice, RealRadar, RealRanking, type FeedState } from "@/components/RealTrends";
+import { POLL_MS, fetchFeed, isStale } from "@/lib/trends-feed";
 import {
-  CATEGORIES, REGION, REGION_BASE, UFS, UF_NAMES,
+  CATEGORIES, REGION, UFS, UF_NAMES,
   demoForPeriod, fmtGrowth, fmtMoney, fmtNum, norm, normalizeAPIRow, sortField, sorter,
   type Signal, type SortKey, type SourceStatus,
 } from "@/lib/intelligence";
@@ -22,18 +24,6 @@ export const Route = createFileRoute("/")({
   }),
   component: App,
 });
-
-/** Quantidade máxima de marcadores no mapa (mesma regra usada pelo BrazilMap). */
-const MAX_PINS = 15;
-function pinCount(rows: Signal[], uf: string) {
-  return Math.min(new Set(rows.map((s) => s.uf)).size, uf ? 1 : MAX_PINS);
-}
-
-/** Deslocamento dos marcadores em UFs pequenas/adjacentes (coordenadas do viewBox 600x600). */
-const PIN_OFFSET: Record<string, [number, number]> = {
-  RN: [602, 124], PB: [602, 170], PE: [602, 216], AL: [602, 262], SE: [586, 308],
-  DF: [416, 294], GO: [350, 330], ES: [534, 374], RJ: [490, 432],
-};
 
 type View = "radar" | "ranking" | "compare" | "sources";
 const NAV: [View, string][] = [
@@ -343,78 +333,6 @@ function SignalTable({ rows, sort, threshold, focus, onPick, labels }: {
           )) : <tr><td colSpan={8} className="empty">Nenhum termo neste recorte. Revise os filtros.</td></tr>}
         </tbody>
       </table>
-    </div>
-  );
-}
-
-function BrazilMap({ rows, uf, focusUF, threshold, onSelect }: {
-  rows: Signal[]; uf: string; focusUF: string; threshold: number; onSelect: (s: string) => void;
-}) {
-  const byUF = new Map<string, Signal[]>();
-  rows.forEach((s) => { if (!byUF.has(s.uf)) byUF.set(s.uf, []); byUF.get(s.uf)!.push(s); });
-  const peaks = [...byUF.entries()].map(([state, recs]) => ({ state, count: recs.length, peak: Math.max(...recs.map((x) => x.growthPct ?? -Infinity)) }));
-  const pins = peaks
-    .sort((a, b) => Number(b.state === focusUF) - Number(a.state === focusUF) || b.peak - a.peak)
-    .slice(0, uf ? 1 : MAX_PINS);
-  const ordered = [...BRAZIL_STATES].sort((a, b) => Number(a.uf === focusUF) - Number(b.uf === focusUF));
-
-  return (
-    <div className="map-stage">
-      <div className="br-map-wrap">
-        <svg className="br-map" viewBox={MAP_VIEWBOX} role="img" aria-label="Mapa interativo dos estados brasileiros">
-          {ordered.map((st) => {
-            const arr = byUF.get(st.uf) || [];
-            const sel = focusUF === st.uf;
-            let fill = arr.length ? (arr.some((s) => (s.growthPct ?? -Infinity) >= threshold) ? "#7040BA" : REGION_BASE[REGION[st.uf] ?? ""]) : "#E5DDF0";
-            if (uf && uf !== st.uf) fill = "#E5DDF0";
-            return (
-              <path key={st.uf} d={st.d} fill={fill} stroke={sel ? "#EBFF70" : "#fff"} strokeWidth={sel ? 2.2 : 0.8}
-                style={{ filter: sel ? "drop-shadow(0 0 5px rgba(153,102,255,.6))" : undefined }}
-                aria-label={UF_NAMES[st.uf]} role="button" tabIndex={0}
-                onClick={() => onSelect(st.uf)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(st.uf); } }}>
-                <title>{UF_NAMES[st.uf]}</title>
-              </path>
-            );
-          })}
-        </svg>
-        <svg className="pin-leaders" viewBox={MAP_VIEWBOX} aria-hidden="true">
-          {pins.map((p) => {
-            const st = BRAZIL_STATES.find((s) => s.uf === p.state);
-            const off = PIN_OFFSET[p.state];
-            if (!st || !off) return null;
-            return (
-              <g key={p.state}>
-                <line x1={st.cx} y1={st.cy} x2={off[0]} y2={off[1]} />
-                <circle cx={st.cx} cy={st.cy} r={2.6} />
-              </g>
-            );
-          })}
-        </svg>
-        <div className="map-pins">
-          {pins.map((p) => {
-            const st = BRAZIL_STATES.find((s) => s.uf === p.state);
-            if (!st) return null;
-            const burst = p.peak >= threshold;
-            const [px, py] = PIN_OFFSET[p.state] ?? [st.cx, st.cy];
-            const title = `${UF_NAMES[p.state]} · ${p.count} termos · pico de ${fmtGrowth(p.peak)}`;
-            return (
-              <button key={p.state} type="button" title={title} aria-label={title}
-                className={"pin" + (PIN_OFFSET[p.state] ? " side" : "") + (burst ? " burst" : "") + (focusUF === p.state ? " selected" : "")}
-                style={{ left: `${(px / 600) * 100}%`, top: `${(py / 600) * 100}%` }}
-                onClick={() => onSelect(p.state)}>
-                {burst ? "✳" : "•"}<span className="pin-label">{p.state}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      <div className="map-hint">Áreas em roxo: estados com sinais. Pontos neon: crescimento acima do limite selecionado.</div>
-      <div className="legend">
-        {pins.some((p) => p.peak >= threshold) && <span><b /> Pico ≥ {threshold}%</span>}
-        {pins.some((p) => p.peak < threshold) && <span><b className="regular" /> Pico abaixo de {threshold}%</span>}
-        {pins.length < byUF.size && <span>Top {pins.length} de {byUF.size} UFs</span>}
-      </div>
     </div>
   );
 }
