@@ -42,3 +42,4 @@ h1{margin:0;font-weight:300;letter-spacing:-.7px;font-size:29px;line-height:1.13
 .pin{width:26px;height:26px;font-size:10px}
 .status-pill{display:inline-flex;margin:0 0 10px;padding:4px 8px;border-radius:20px;font-size:9px;font-weight:800;letter-spacing:.4px}
 .status-pill.warn{background:#FFF6D9;color:#7A5A00}.status-pill.ok{background:#EDFAF2;color:#155333}.status-pill.off{background:#EDE9F5;color:#635074}.status-pill.demo{background:#F0E8FA;color:#6A3DAB}
+.detail h2,.method h3{font-weight:700}
