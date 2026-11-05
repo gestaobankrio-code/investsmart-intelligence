@@ -23,6 +23,18 @@ export const Route = createFileRoute("/")({
   component: App,
 });
 
+/** Quantidade máxima de marcadores no mapa (mesma regra usada pelo BrazilMap). */
+const MAX_PINS = 15;
+function pinCount(rows: Signal[], uf: string) {
+  return Math.min(new Set(rows.map((s) => s.uf)).size, uf ? 1 : MAX_PINS);
+}
+
+/** Deslocamento dos marcadores em UFs pequenas/adjacentes (coordenadas do viewBox 600x600). */
+const PIN_OFFSET: Record<string, [number, number]> = {
+  RN: [602, 124], PB: [602, 170], PE: [602, 216], AL: [602, 262], SE: [586, 308],
+  DF: [416, 294], GO: [350, 330], ES: [534, 374], RJ: [490, 432],
+};
+
 type View = "radar" | "ranking" | "compare" | "sources";
 const NAV: [View, string][] = [
   ["radar", "Radar Brasil"], ["ranking", "Ranking por UF"],
@@ -175,7 +187,7 @@ function App() {
                   <label className="toggle"><input type="checkbox" checked={onlyBurst} onChange={(e) => setOnlyBurst(e.target.checked)} />Só explosões</label>
                 </div>
               </div>
-              <Kpis rows={rows} threshold={threshold} />
+              <Kpis rows={rows} threshold={threshold} pins={pinCount(rows, uf)} />
               <div className="radar-grid">
                 <article className="card map-card">
                   <div className="card-head">
@@ -291,14 +303,14 @@ function Notice({ mode, lastUpdate }: { mode: "demo" | "real"; lastUpdate: strin
   );
 }
 
-function Kpis({ rows, threshold }: { rows: Signal[]; threshold: number }) {
+function Kpis({ rows, threshold, pins }: { rows: Signal[]; threshold: number; pins: number }) {
   const ufs = new Set(rows.map((s) => s.uf)).size;
   const bursts = rows.filter((s) => (s.growthPct ?? -Infinity) >= threshold).length;
   const top = rows.slice().sort(sorter("growthPct"))[0];
   const vals: [string, string | number, string][] = [
     ["Estados com sinais", ufs, "UFs presentes no recorte"],
     ["Termos analisados", rows.length, "Palavras-chave por UF"],
-    [`Explosões ≥ ${threshold}%`, bursts, "Marcadores em destaque"],
+    [`Termos ≥ ${threshold}%`, bursts, `Acima do limite · ${pins} ${pins === 1 ? "marcador" : "marcadores"} no mapa`],
     ["Maior alta", top ? fmtGrowth(top.growthPct) : "—", top ? `${top.uf} · ${top.term}` : "Sem sinais"],
   ];
   return (
@@ -343,7 +355,7 @@ function BrazilMap({ rows, uf, focusUF, threshold, onSelect }: {
   const peaks = [...byUF.entries()].map(([state, recs]) => ({ state, count: recs.length, peak: Math.max(...recs.map((x) => x.growthPct ?? -Infinity)) }));
   const pins = peaks
     .sort((a, b) => Number(b.state === focusUF) - Number(a.state === focusUF) || b.peak - a.peak)
-    .slice(0, uf ? 1 : 15);
+    .slice(0, uf ? 1 : MAX_PINS);
   const ordered = [...BRAZIL_STATES].sort((a, b) => Number(a.uf === focusUF) - Number(b.uf === focusUF));
 
   return (
@@ -366,16 +378,30 @@ function BrazilMap({ rows, uf, focusUF, threshold, onSelect }: {
             );
           })}
         </svg>
+        <svg className="pin-leaders" viewBox={MAP_VIEWBOX} aria-hidden="true">
+          {pins.map((p) => {
+            const st = BRAZIL_STATES.find((s) => s.uf === p.state);
+            const off = PIN_OFFSET[p.state];
+            if (!st || !off) return null;
+            return (
+              <g key={p.state}>
+                <line x1={st.cx} y1={st.cy} x2={off[0]} y2={off[1]} />
+                <circle cx={st.cx} cy={st.cy} r={2.6} />
+              </g>
+            );
+          })}
+        </svg>
         <div className="map-pins">
           {pins.map((p) => {
             const st = BRAZIL_STATES.find((s) => s.uf === p.state);
             if (!st) return null;
             const burst = p.peak >= threshold;
+            const [px, py] = PIN_OFFSET[p.state] ?? [st.cx, st.cy];
             const title = `${UF_NAMES[p.state]} · ${p.count} termos · pico de ${fmtGrowth(p.peak)}`;
             return (
               <button key={p.state} type="button" title={title} aria-label={title}
-                className={"pin" + (burst ? " burst" : "") + (focusUF === p.state ? " selected" : "")}
-                style={{ left: `${(st.cx / 600) * 100}%`, top: `${(st.cy / 600) * 100}%` }}
+                className={"pin" + (PIN_OFFSET[p.state] ? " side" : "") + (burst ? " burst" : "") + (focusUF === p.state ? " selected" : "")}
+                style={{ left: `${(px / 600) * 100}%`, top: `${(py / 600) * 100}%` }}
                 onClick={() => onSelect(p.state)}>
                 {burst ? "✳" : "•"}<span className="pin-label">{p.state}</span>
               </button>
@@ -384,7 +410,11 @@ function BrazilMap({ rows, uf, focusUF, threshold, onSelect }: {
         </div>
       </div>
       <div className="map-hint">Áreas em roxo: estados com sinais. Pontos neon: crescimento acima do limite selecionado.</div>
-      <div className="legend"><span><b /> Explosão</span><span><b className="regular" /> Sinal estadual</span></div>
+      <div className="legend">
+        {pins.some((p) => p.peak >= threshold) && <span><b /> Pico ≥ {threshold}%</span>}
+        {pins.some((p) => p.peak < threshold) && <span><b className="regular" /> Pico abaixo de {threshold}%</span>}
+        {pins.length < byUF.size && <span>Top {pins.length} de {byUF.size} UFs</span>}
+      </div>
     </div>
   );
 }
@@ -414,12 +444,12 @@ function Compare({ active, term, setTerm, onPick, mode, lastUpdate }: {
         <select className="field" aria-label="Termo comparado" value={t} onChange={(e) => setTerm(e.target.value)}>
           {terms.map((x) => <option key={x} value={x}>{x}</option>)}
         </select>
-        <span className="tag">BRASIL · {data.length} ESTADOS</span>
+        <span className="tag">{data.length > 12 ? `TOP 12 DE ${data.length} UFs` : `${data.length} ${data.length === 1 ? "UF" : "UFs"} COM DADOS`}</span>
       </div>
       <div className="compare-grid">
-        <article className="card"><div className="card-head"><div><div className="card-title">Buscas mensais médias · Google Ads</div><div className="card-sub">Volume estimado de busca por UF.</div></div></div>
+        <article className="card"><div className="card-head"><div><div className="card-title">Buscas mensais médias · Google Ads</div><div className="card-sub">Volume estimado de busca por UF{data.length > 12 ? ` · Top 12 de ${data.length} UFs` : ""}.</div></div></div>
           <div className="compare-summary">{bars(data.slice().sort(sorter("avgMonthlySearches")).slice(0, 12), "avgMonthlySearches", fmtNum)}<p className="comp-note">Volume aproximado calculado pelo Google Ads; não é o índice relativo do Trends.</p></div></article>
-        <article className="card"><div className="card-head"><div><div className="card-title">Crescimento de interesse · Google Trends</div><div className="card-sub">Variação relativa segundo o período selecionado.</div></div></div>
+        <article className="card"><div className="card-head"><div><div className="card-title">Crescimento de interesse · Google Trends</div><div className="card-sub">Variação relativa segundo o período selecionado{data.length > 12 ? ` · Top 12 de ${data.length} UFs` : ""}.</div></div></div>
           <div className="compare-summary">{bars(data.slice().sort(sorter("growthPct")).slice(0, 12), "growthPct", fmtGrowth)}<p className="comp-note">Variações devem ser obtidas usando a mesma janela e metodologia para permitir comparações.</p></div></article>
       </div>
     </section>
@@ -461,6 +491,7 @@ function Sources({ status, checkedAt, mode }: { status: SourceStatus; checkedAt:
         <article className="card method"><span className="method-ic">ADS</span><h3>Métricas do Keyword Planner</h3><p>Médias mensais de pesquisa, concorrência e faixas de lance. O <strong>CPC médio</strong> histórico é condicional (<code>include_average_cpc</code>) e pode ficar indisponível; quando ausente, a interface mostra “Indisponível”.</p></article>
         <article className="card method"><span className="method-ic">↻</span><h3>Atualização sob demanda</h3><p>“Atualizar fontes” envia período, UF e tema ao servidor, que consulta os conectores habilitados e normaliza os dados. Sem conector aprovado, a plataforma mantém apenas o protótipo ilustrativo.</p></article>
       </div>
+      <div className="notice" style={{ marginTop: 12 }}><span><strong>Como os dados demonstrativos são gerados:</strong> os valores-base são fixos e fictícios. Ao trocar o período, o crescimento é apenas simulado por fatores fixos (7 dias = ×1,28 · 30 dias = ×1,00 · 90 dias = ×0,67). Volume de buscas, índice Trends, CPC e concorrência permanecem iguais em todos os períodos e não representam dados atualizados do Google Ads nem do Google Trends.</span><span className="flag">DEMONSTRATIVO</span></div>
       <article className="card flow"><div className="flow-box"><strong>Selecionar filtros</strong><small>UF · tema · período</small></div><span className="arrow">→</span><div className="flow-box"><strong>Atualizar fontes</strong><small>Servidor protegido</small></div><span className="arrow">→</span><div className="flow-box"><strong>Radar interativo</strong><small>Trends × Google Ads</small></div></article>
     </section>
   );
