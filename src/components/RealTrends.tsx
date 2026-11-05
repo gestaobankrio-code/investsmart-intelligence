@@ -27,7 +27,9 @@ export function RealNotice({ st }: { st: FeedState }) {
   return (
     <div className={"notice" + (stale ? "" : " real")}>
       <span>
-        <strong>DADOS REAIS GOOGLE TRENDS</strong> · Semana de referência {fmtDate(feed.weekStart)}–{fmtDate(feed.weekEnd)} · Data da fonte {fmtDate(feed.sourceDate)} · Última verificação do feed {fmtDateTime(feed.lastCheck)} · Lido nesta página {readAt ?? "—"}
+        <strong>GOOGLE TRENDS — DADOS REAIS</strong> · Semana de referência {fmtDate(feed.weekStart)}–{fmtDate(feed.weekEnd)} · Data da fonte {fmtDate(feed.sourceDate)} · Última verificação do feed {fmtDateTime(feed.lastCheck)} · Lido nesta página {readAt ?? "—"}
+        {feed.extraction === "bigquery_live" && <> · Última extração validada em 05/11/2026. Agendamento automático em configuração.</>}
+        {<> · Termos financeiros entre os destaques nacionais · cobertura parcial por UF.</>}
         {feed.isStaticSample && <> · <strong>AMOSTRA INICIAL ESTÁTICA</strong> (coleta automatizada ainda não validada)</>}
         {error && <> · Última releitura falhou: {error}</>}
       </span>
@@ -38,7 +40,7 @@ export function RealNotice({ st }: { st: FeedState }) {
 
 function cellsOf(rows: TrendRecord[], minPts: number): MapCell[] {
   const m = new Map<string, TrendRecord[]>();
-  rows.forEach((r) => { if (!m.has(r.uf)) m.set(r.uf, []); m.get(r.uf)!.push(r); });
+  rows.forEach((r) => { const records = m.get(r.uf) ?? []; records.push(r); m.set(r.uf, records); });
   return [...m.entries()].map(([uf, recs]) => {
     const ds = recs.map((r) => r.deltaPts).filter((x): x is number => x != null);
     const peak = ds.length ? Math.max(...ds) : null;
@@ -219,13 +221,13 @@ export function RealCompare({ st, onPick }: { st: FeedState; onPick: (uf: string
   const withData = UFS.filter((u) => byUF.has(u));
   const missing = UFS.filter((u) => !byUF.has(u));
   const bars = (key: "indexNow" | "deltaPts", fmt: (n: number | null) => string) => {
-    const list = withData.map((u) => byUF.get(u)!).sort(by(key === "indexNow" ? "index" : "delta")).slice(0, 12);
+    const list = withData.flatMap((u) => { const record = byUF.get(u); return record ? [record] : []; }).sort(by(key === "indexNow" ? "index" : "delta")).slice(0, 12);
     if (!list.length) return <div className="empty">Sem dados para este termo.</div>;
     const top = Math.max(1, ...list.map((r) => Math.abs(r[key] ?? 0)));
     return list.map((r) => (
       <div key={r.id} className="bar-row" style={{ cursor: "pointer" }} onClick={() => onPick(r.uf)}>
         <span className="bar-name">{r.uf} · {UF_NAMES[r.uf]}</span>
-        <div className="bar-track"><div className="bar-fill" style={{ width: r[key] == null ? 0 : `${Math.max(2, Math.min(100, (Math.max(0, r[key]!) / top) * 100))}%` }} /></div>
+        <div className="bar-track"><div className="bar-fill" style={{ width: r[key] == null ? 0 : `${Math.max(2, Math.min(100, (Math.max(0, r[key] ?? 0) / top) * 100))}%` }} /></div>
         <div className="bar-num">{fmt(r[key])}</div>
       </div>
     ));
