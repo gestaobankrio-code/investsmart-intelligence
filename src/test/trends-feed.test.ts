@@ -70,3 +70,21 @@ describe("public feed revalidation", () => {
     await expect(fetchFeed()).rejects.toThrow("HTTP 503");
   });
 });
+
+describe("V12.3 state grouping and trend", () => {
+  it("trend comes from points; null previous is 'Sem comparação'", () => {
+    const f = parseFeed(base([rec({}), rec({ uf: "RJ", indiceAnterior: null }), rec({ uf: "MG", indiceAtual: 40 })]), {});
+    expect(f.records.map((r) => r.trend)).toEqual(["Em alta", "Sem comparação", "Estável"]);
+  });
+  it("groups all requested UFs, leaving empty ones empty (no zero records)", async () => {
+    const { groupByUF } = await import("@/lib/trends-feed");
+    const f = parseFeed(base([rec({}), rec({ termo: "ibovespa" })]), {});
+    const g = groupByUF(f.records, ["SP", "AC"]);
+    expect(g[0]?.records.map((r) => r.term)).toEqual(["selic", "ibovespa"]);
+    expect(g[1]?.records).toEqual([]);
+  });
+  it("terms come only from the feed, never from a fixed list", () => {
+    const f = parseFeed(base([rec({ termo: "termo qualquer" })]), {});
+    expect(f.terms).toEqual(["termo qualquer"]);
+  });
+});
