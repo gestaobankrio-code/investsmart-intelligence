@@ -72,7 +72,7 @@ function App() {
     <div className="shell">
       <aside className="sidebar">
         <div className="side-label">SEARCH INTELLIGENCE</div>
-        <nav className="side-nav" aria-label="Módulos">{NAV.map(([value, label], index) => <Button variant="ghost" key={value} type="button" className={"nav-btn" + (view === value ? " active" : "")} onClick={() => setView(value)}><span className="nav-icon">0{index + 1}</span>{label}</Button>)}</nav>
+        <nav className="side-nav" aria-label="Módulos">{NAV.map(([value, label], index) => <Button variant="ghost" key={value} type="button" aria-label={label} className={"nav-btn" + (view === value ? " active" : "")} onClick={() => setView(value)}><span className="nav-icon">0{index + 1}</span>{label}</Button>)}</nav>
         <div className="side-foot"><strong>Inteligência regional</strong><br />Termos financeiros entre os destaques nacionais do Google Trends, com cobertura parcial por UF.</div>
       </aside>
       <main className="main">
