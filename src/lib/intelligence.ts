@@ -81,7 +81,7 @@ function demoSignals(): Signal[] {
         trendIndex: Math.max(20, Math.min(99, 46 + ((n * 7) % 52))),
         avgMonthlySearches: Math.round((t.vol * (0.38 + ((i * 17) % 49) / 100) + j * 167) / 100) * 100,
         avgCpc: Number((t.cpc * (0.76 + (i % 8) * 0.07)).toFixed(2)),
-        competition: ["Baixa", "Média", "Alta"][(i + j) % 3],
+        competition: ["Baixa", "Média", "Alta"][(i + j) % 3]!,
         periodDays: 30,
         source: "demo",
       });
@@ -106,10 +106,10 @@ export function demoForPeriod(period: number): Signal[] {
 export function normalizeAPIRow(s: unknown): Signal | null {
   if (!s || typeof s !== "object") return null;
   const r = s as Record<string, unknown>;
-  const st = String(r.uf || "").toUpperCase();
-  const term = String(r.term || "").trim();
-  const cat = String(r.category || "").trim();
-  const p = Number(r.periodDays);
+  const st = String(r["uf"] || "").toUpperCase();
+  const term = String(r["term"] || "").trim();
+  const cat = String(r["category"] || "").trim();
+  const p = Number(r["periodDays"]);
   if (!UF_NAMES[st] || !term || term.length > 140 || !cat || ![7, 30, 90].includes(p)) return null;
   const numeric = (v: unknown, min: number, max: number) =>
     v === null || v === undefined || v === ""
@@ -123,11 +123,11 @@ export function normalizeAPIRow(s: unknown): Signal | null {
     term,
     category: cat,
     periodDays: p,
-    growthPct: numeric(r.growthPct, -100, 1e6),
-    trendIndex: numeric(r.trendIndex, 0, 100),
-    avgMonthlySearches: numeric(r.avgMonthlySearches, 0, 1e10),
-    avgCpc: numeric(r.avgCpc, 0, 1e6),
-    competition: String(r.competition || "Indisponível").slice(0, 28),
+    growthPct: numeric(r["growthPct"], -100, 1e6),
+    trendIndex: numeric(r["trendIndex"], 0, 100),
+    avgMonthlySearches: numeric(r["avgMonthlySearches"], 0, 1e10),
+    avgCpc: numeric(r["avgCpc"], 0, 1e6),
+    competition: String(r["competition"] || "Indisponível").slice(0, 28),
     source: "api",
   };
 }
