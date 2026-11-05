@@ -70,10 +70,10 @@ function App() {
   // Foco
   let fUF = uf || focusUF;
   if (!rows.some((s) => s.uf === fUF)) {
-    const fb = rows.toSorted(sorter("growthPct"))[0];
+    const fb = rows.slice().sort(sorter("growthPct"))[0];
     if (fb) fUF = fb.uf;
   }
-  const candidates = rows.filter((s) => s.uf === fUF).toSorted(sorter("growthPct"));
+  const candidates = rows.filter((s) => s.uf === fUF).slice().sort(sorter("growthPct"));
   const current = candidates.find((s) => s.term === focusTerm) ?? candidates[0];
 
   const selectState = (state: string, toggle = true) => {
@@ -229,7 +229,7 @@ function App() {
                   <div className="card-head"><div><div className="card-title">Explosões em destaque</div><div className="card-sub">Sinais com maior aceleração no período.</div></div><span className="tag">TOP 5</span></div>
                   <div className="alerts">
                     {(() => {
-                      const top = rows.filter((s) => (s.growthPct ?? -Infinity) >= threshold).toSorted(sorter("growthPct")).slice(0, 5);
+                      const top = rows.filter((s) => (s.growthPct ?? -Infinity) >= threshold).slice().sort(sorter("growthPct")).slice(0, 5);
                       return top.length ? top.map((s, i) => (
                         <button key={s.id} className="alert" type="button" onClick={() => { setFocusUF(s.uf); setUf(s.uf); setFocusTerm(s.term); }}>
                           <span className="alert-num">{i + 1}</span>
@@ -294,7 +294,7 @@ function Notice({ mode, lastUpdate }: { mode: "demo" | "real"; lastUpdate: strin
 function Kpis({ rows, threshold }: { rows: Signal[]; threshold: number }) {
   const ufs = new Set(rows.map((s) => s.uf)).size;
   const bursts = rows.filter((s) => (s.growthPct ?? -Infinity) >= threshold).length;
-  const top = rows.toSorted(sorter("growthPct"))[0];
+  const top = rows.slice().sort(sorter("growthPct"))[0];
   const vals: [string, string | number, string][] = [
     ["Estados com sinais", ufs, "UFs presentes no recorte"],
     ["Termos analisados", rows.length, "Palavras-chave por UF"],
@@ -313,7 +313,7 @@ function Kpis({ rows, threshold }: { rows: Signal[]; threshold: number }) {
 function SignalTable({ rows, sort, threshold, focus, onPick, labels }: {
   rows: Signal[]; sort: SortKey; threshold: number; focus?: Signal; onPick: (s: Signal) => void; labels: string[];
 }) {
-  const sorted = rows.toSorted(sorter(sortField(sort))).slice(0, 160);
+  const sorted = rows.slice().sort(sorter(sortField(sort))).slice(0, 160);
   return (
     <div className="table-container">
       <table>
@@ -418,9 +418,9 @@ function Compare({ active, term, setTerm, onPick, mode, lastUpdate }: {
       </div>
       <div className="compare-grid">
         <article className="card"><div className="card-head"><div><div className="card-title">Buscas mensais médias · Google Ads</div><div className="card-sub">Volume estimado de busca por UF.</div></div></div>
-          <div className="compare-summary">{bars(data.toSorted(sorter("avgMonthlySearches")).slice(0, 12), "avgMonthlySearches", fmtNum)}<p className="comp-note">Volume aproximado calculado pelo Google Ads; não é o índice relativo do Trends.</p></div></article>
+          <div className="compare-summary">{bars(data.slice().sort(sorter("avgMonthlySearches")).slice(0, 12), "avgMonthlySearches", fmtNum)}<p className="comp-note">Volume aproximado calculado pelo Google Ads; não é o índice relativo do Trends.</p></div></article>
         <article className="card"><div className="card-head"><div><div className="card-title">Crescimento de interesse · Google Trends</div><div className="card-sub">Variação relativa segundo o período selecionado.</div></div></div>
-          <div className="compare-summary">{bars(data.toSorted(sorter("growthPct")).slice(0, 12), "growthPct", fmtGrowth)}<p className="comp-note">Variações devem ser obtidas usando a mesma janela e metodologia para permitir comparações.</p></div></article>
+          <div className="compare-summary">{bars(data.slice().sort(sorter("growthPct")).slice(0, 12), "growthPct", fmtGrowth)}<p className="comp-note">Variações devem ser obtidas usando a mesma janela e metodologia para permitir comparações.</p></div></article>
       </div>
     </section>
   );
