@@ -54,11 +54,41 @@ function App() {
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const mode: "demo" | "real" = remote ? "real" : "demo";
-  const showToast = (t: string) => {
+  // Modo explícito: "trends" (feed público real) ou "demo". Nunca mesclados.
+  const [dataMode, setDataMode] = useState<"trends" | "demo">("trends");
+  const [feedSt, setFeedSt] = useState<FeedState>({ feed: null, error: null, readAt: null, loading: true });
+  const loadFeed = useCallback(async (manual = false) => {
+    setFeedSt((p) => ({ ...p, loading: true }));
+    try {
+      const feed = await fetchFeed();
+      const readAt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date());
+      setFeedSt({ feed, error: null, readAt, loading: false });
+      if (manual) showToast(`Feed relido: ${feed.records.length} registros${isStale(feed) ? " · dados desatualizados" : ""}. Nenhuma nova consulta ao Google foi feita.`);
+    } catch (e) {
+      const msg = String((e as Error)?.message || e);
+      setFeedSt((p) => ({ ...p, error: msg, loading: false }));
+      if (manual) showToast("Falha ao reler o feed: " + msg);
+    }
+  }, []);
+  useEffect(() => {
+    void loadFeed();
+    const id = setInterval(() => void loadFeed(), POLL_MS);
+    return () => clearInterval(id);
+  }, [loadFeed]);
+  const isReal = dataMode === "trends";
+  const demoCells = useMemo<MapCell[]>(() => {
+    const m = new Map<string, Signal[]>();
+    rows.forEach((r) => { if (!m.has(r.uf)) m.set(r.uf, []); m.get(r.uf)!.push(r); });
+    return [...m.entries()].map(([u, recs]) => {
+      const peak = Math.max(...recs.map((x) => x.growthPct ?? -Infinity));
+      return { uf: u, count: recs.length, peak, hot: peak >= threshold, title: `${UF_NAMES[u]} · ${recs.length} termos · pico de ${fmtGrowth(peak)} (demonstração)` };
+    });
+  }, [rows, threshold]);
+  function showToast(t: string) {
     setToast(t);
     clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 3800);
-  };
+  }
 
   const active = useMemo(
     () => (remote ? remote.filter((s) => s.periodDays === period) : demoForPeriod(period)),
