@@ -255,7 +255,7 @@ function StateGroups({ rows, sort, setSort, focusUF, focusId, onPick, minPts }: 
     const c = box.current;
     const el = c?.querySelector<HTMLElement>(`[data-uf="${focusUF}"]`);
     // Scroll only the inner list so the map and cards stay in place.
-    if (c && el) c.scrollTo({ top: el.offsetTop - c.offsetTop - 4, behavior: "smooth" });
+    if (c && el) c.scrollTo({ top: el.offsetTop - 4, behavior: "smooth" });
   }, [focusUF]);
   const toggle = (uf: string) => setOpen((o) => { const n = new Set(o); if (n.has(uf)) n.delete(uf); else n.add(uf); return n; });
   const groups = groupByUF(rows, UFS);
