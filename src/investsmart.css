@@ -36,3 +36,9 @@ h1{margin:0;font-weight:300;letter-spacing:-.7px;font-size:29px;line-height:1.13
 @media(max-width:1050px){.shell{grid-template-columns:1fr}.sidebar{position:static;height:auto;padding:10px 16px}.side-label,.side-foot{display:none}.side-nav{display:flex;overflow:auto}.nav-btn{width:auto;flex-shrink:0}.main{padding:22px 18px}.radar-grid{grid-template-columns:1fr}.detail{min-height:0}.map-stage{min-height:445px}.map-card{min-height:0}}
 @media(max-width:740px){header.top{padding:0 14px}.brand{gap:10px}.brand strong{display:none}.top-meta .env{display:none}.pagehead{flex-direction:column}h1{font-size:25px}.filters{gap:8px}.filter{min-width:calc(50% - 8px)}.filter.big{min-width:100%}.filter-actions{width:100%;justify-content:space-between}.map-stage{min-height:380px}.map-hint{display:none}.legend{bottom:7px;left:8px;gap:8px}.compare-grid,.method-grid{grid-template-columns:1fr}.flow{grid-template-columns:1fr}.arrow{transform:rotate(90deg)}}
 @media(prefers-reduced-motion:reduce){.pin.burst::before,.pin.burst::after,.loading .spinner{animation:none!important}}
+.br-map-wrap{position:relative;width:min(100%,520px);aspect-ratio:1/1}
+.br-map-wrap .br-map{width:100%;height:100%;max-height:none}
+.br-map-wrap .map-pins{position:absolute;inset:0}
+.pin{width:26px;height:26px;font-size:10px}
+.status-pill{display:inline-flex;margin:0 0 10px;padding:4px 8px;border-radius:20px;font-size:9px;font-weight:800;letter-spacing:.4px}
+.status-pill.warn{background:#FFF6D9;color:#7A5A00}.status-pill.ok{background:#EDFAF2;color:#155333}.status-pill.off{background:#EDE9F5;color:#635074}.status-pill.demo{background:#F0E8FA;color:#6A3DAB}
