@@ -34,3 +34,4 @@ use the editor.
 
 - Public screens use only the Google Trends GitHub Pages feed via `src/lib/trends-feed.ts`; no demo branch or server adapter is imported, so failed reads cannot fall back to simulated metrics.
 - Feed reads use no-store and a shared per-read query identifier for both public JSON files; extraction classification comes only from trends.json to avoid stale cache and status metadata confusion.
+- Radar term lists are grouped per UF from feed records only (groupByUF over all 27 UFs, empty = no data) inside a fixed-height inner scroll container; why: page height must not grow with the feed.
