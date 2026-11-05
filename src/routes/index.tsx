@@ -31,7 +31,7 @@ function pinCount(rows: Signal[], uf: string) {
 
 /** Deslocamento dos marcadores em UFs pequenas/adjacentes (coordenadas do viewBox 600x600). */
 const PIN_OFFSET: Record<string, [number, number]> = {
-  RN: [600, 138], PB: [600, 172], PE: [600, 206], AL: [600, 240], SE: [588, 274],
+  RN: [602, 124], PB: [602, 170], PE: [602, 216], AL: [602, 262], SE: [586, 308],
   DF: [416, 294], GO: [350, 330], ES: [534, 374], RJ: [490, 432],
 };
 
