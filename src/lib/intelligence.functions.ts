@@ -17,8 +17,10 @@ interface RefreshInput {
   category: string | null;
 }
 
+type RawSignal = Record<string, string | number | null>;
+
 interface AdapterResult {
-  signals: unknown[];
+  signals: RawSignal[];
   status: string;
   message: string;
 }
@@ -52,11 +54,11 @@ async function googleTrendsAdapter(_input: RefreshInput): Promise<AdapterResult>
 export const refreshSources = createServerFn({ method: "POST" })
   .inputValidator((data: unknown): RefreshInput => {
     const d = (data ?? {}) as Record<string, unknown>;
-    const p = Number(d.periodDays);
+    const p = Number(d["periodDays"]);
     return {
       periodDays: [7, 30, 90].includes(p) ? p : 30,
-      uf: typeof d.uf === "string" && /^[A-Z]{2}$/.test(d.uf) ? d.uf : null,
-      category: typeof d.category === "string" && d.category.length < 60 ? d.category : null,
+      uf: typeof d["uf"] === "string" && /^[A-Z]{2}$/.test(d["uf"]) ? d["uf"] : null,
+      category: typeof d["category"] === "string" && d["category"].length < 60 ? d["category"] : null,
     };
   })
   .handler(async ({ data }) => {

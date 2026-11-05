@@ -32,7 +32,7 @@ export const UF_NAMES: Record<string, string> = {
 };
 
 export const UFS = Object.keys(UF_NAMES).sort((a, b) =>
-  UF_NAMES[a].localeCompare(UF_NAMES[b], "pt-BR"),
+  (UF_NAMES[a] ?? "").localeCompare(UF_NAMES[b] ?? "", "pt-BR"),
 );
 
 export const REGION: Record<string, string> = {
@@ -70,7 +70,7 @@ function demoSignals(): Signal[] {
   UFS.forEach((uf, i) => {
     const picks = [i % TOPICS.length, (i + 4) % TOPICS.length, (i + 8) % TOPICS.length, 0, 9];
     [...new Set(picks)].forEach((idx, j) => {
-      const t = TOPICS[idx];
+      const t = TOPICS[idx]!;
       const n = i * 47 + j * 31 + 13;
       out.push({
         id: `demo-${uf}-${idx}`,
