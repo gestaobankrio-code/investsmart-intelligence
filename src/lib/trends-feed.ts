@@ -77,11 +77,11 @@ export function parseFeed(trends: unknown, status: unknown): TrendsFeed {
     terms: [...new Set(records.map((r) => r.term))].sort((a, b) => a.localeCompare(b, "pt-BR")),
     weekStart: isoDate(t["semanaInicio"]),
     weekEnd: isoDate(t["semanaFim"]),
-    sourceDate: dates.length ? dates.sort().at(-1)! : null,
+    sourceDate: dates.sort().at(-1) ?? null,
     generatedAt: isoDate(t["geradoEm"]),
     lastCheck: isoDate(s["ultimaVerificacao"]),
     extraction,
-    isStaticSample: extraction !== "bigquery",
+    isStaticSample: extraction !== "bigquery_live" && extraction !== "bigquery",
   };
 }
 
@@ -93,8 +93,12 @@ export function isStale(feed: TrendsFeed, now = new Date()): boolean {
 }
 
 export async function fetchFeed(): Promise<TrendsFeed> {
+  // The same fresh read identifier is used for both files, bypassing stale CDN/browser entries.
+  const revision = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const get = async (u: string) => {
-    const res = await fetch(u, { cache: "no-store" });
+    const url = new URL(u);
+    url.searchParams.set("revalidate", revision);
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status} em ${u.split("/").pop()}`);
     return res.json() as Promise<unknown>;
   };
