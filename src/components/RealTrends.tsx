@@ -1,15 +1,19 @@
 // Modo "Dados reais Google Trends": apenas índice 0–100 e variação em pontos.
 // Nunca exibe volume, CPC, concorrência ou crescimento percentual.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BrazilMap, pinCount, type MapCell } from "./BrazilMap";
 import { REGION, UFS, UF_NAMES, norm } from "@/lib/intelligence";
-import { fmtDate, fmtDateTime, fmtIdx, fmtPts, isStale, type TrendRecord, type TrendsFeed } from "@/lib/trends-feed";
+import { fmtDate, fmtDateTime, fmtIdx, fmtPts, groupByUF, isStale, type TrendRecord, type TrendsFeed } from "@/lib/trends-feed";
 
-type RSort = "index" | "delta";
+type RSort = "index" | "delta" | "alpha" | "date";
 const by = (k: RSort) => (a: TrendRecord, b: TrendRecord) => {
+  if (k === "alpha") return a.term.localeCompare(b.term, "pt-BR") || a.uf.localeCompare(b.uf);
+  if (k === "date") return (b.sourceDate ?? b.week).localeCompare(a.sourceDate ?? a.week) || a.term.localeCompare(b.term, "pt-BR");
   const f = (r: TrendRecord) => (k === "index" ? r.indexNow : r.deltaPts) ?? -Infinity;
   return f(b) - f(a);
 };
+const SORT_OPTS: [RSort, string][] = [["delta", "Maior variação (pts)"], ["index", "Maior índice atual"], ["alpha", "Ordem alfabética"], ["date", "Data de referência"]];
+const isTop = (r: TrendRecord) => r.source.toLowerCase().includes("mais");
 
 export interface FeedState { feed: TrendsFeed | null; error: string | null; readAt: string | null; loading: boolean }
 
@@ -53,16 +57,16 @@ function Table({ rows, sort, focus, onPick, minPts }: { rows: TrendRecord[]; sor
   return (
     <div className="table-container">
       <table>
-        <thead><tr><th>UF</th><th>Termo</th><th>Destaque nacional</th><th>Índice atual</th><th>Índice anterior</th><th>Variação (pts)</th><th>Data da fonte</th></tr></thead>
+        <thead><tr><th>UF</th><th>Termo</th><th>Destaque nacional</th><th>Posição nacional</th><th>Índice atual</th><th>Índice anterior</th><th>Variação (pts)</th><th>Data da fonte</th></tr></thead>
         <tbody>
           {sorted.length ? sorted.map((r) => (
             <tr key={r.id} className={focus?.id === r.id ? "selected-row" : ""} onClick={() => onPick(r)}>
-              <td><strong>{r.uf}</strong></td><td><strong>{r.term}</strong></td><td><span className="mini-pill">{r.source}</span></td>
+              <td><strong>{r.uf}</strong></td><td><strong>{r.term}</strong></td><td><span className="mini-pill">{r.source}</span></td><td>{r.rankTop25 != null ? `${r.rankTop25}º` : "Não informada"}</td>
               <td><strong>{fmtIdx(r.indexNow)}</strong></td><td>{fmtIdx(r.indexPrev)}</td>
               <td><span className={"growth" + ((r.deltaPts ?? -Infinity) >= minPts ? " hot" : "")}>{fmtPts(r.deltaPts)}</span></td>
               <td>{fmtDate(r.sourceDate)}</td>
             </tr>
-          )) : <tr><td colSpan={7} className="empty">Sem dados neste recorte. Revise os filtros.</td></tr>}
+          )) : <tr><td colSpan={8} className="empty">Sem dados neste recorte. Revise os filtros.</td></tr>}
         </tbody>
       </table>
     </div>
@@ -166,17 +170,7 @@ export function RealRadar({ st, uf, setUf, focusUF, setFocusUF }: { st: FeedStat
         </aside>
       </div>
       <div className="dashboard-lower">
-        <article className="card">
-          <div className="card-head">
-            <div><div className="card-title">Termos por estado</div><div className="card-sub">Índice 0–100 e variação em pontos entre semanas completas. Clique numa linha para aprofundar.</div></div>
-            <div className="table-tools">
-              <select className="field" aria-label="Ordenação" value={sort} onChange={(e) => setSort(e.target.value as RSort)}>
-                <option value="delta">Maior variação (pts)</option><option value="index">Maior índice atual</option>
-              </select>
-            </div>
-          </div>
-          <Table rows={rows} sort={sort} focus={current} onPick={pick} minPts={minPts} />
-        </article>
+        <StateGroups rows={rows} sort={sort} setSort={setSort} focusUF={fUF} focusId={current?.id} onPick={pick} minPts={minPts} />
         <aside className="card">
           <div className="card-head"><div><div className="card-title">Maiores altas</div><div className="card-sub">Variação semanal em pontos de índice.</div></div><span className="tag">TOP 5</span></div>
           <div className="alerts">
@@ -203,12 +197,14 @@ export function RealRanking({ st, onPick }: { st: FeedState; onPick: (uf: string
       <div className="filters">
         <div className="filter big"><label htmlFor="rq">Buscar termo</label><input className="field" id="rq" placeholder="Ex.: selic, ibovespa..." value={q} onChange={(e) => setQ(e.target.value)} /></div>
         <div className="filter"><label htmlFor="ru">Estado</label><select className="field" id="ru" value={uf} onChange={(e) => setUf(e.target.value)}><option value="">Todas as UFs</option>{UFS.map((s) => <option key={s} value={s}>{s} · {UF_NAMES[s]}</option>)}</select></div>
-        <div className="filter"><label htmlFor="rs">Ordenar por</label><select className="field" id="rs" value={sort} onChange={(e) => setSort(e.target.value as RSort)}><option value="index">Maior índice atual</option><option value="delta">Maior variação (pts)</option></select></div>
+        <div className="filter"><label htmlFor="rs">Ordenar por</label><select className="field" id="rs" value={sort} onChange={(e) => setSort(e.target.value as RSort)}>{SORT_OPTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
       </div>
-      <article className="card">
-        <div className="card-head"><div><div className="card-title">Ranking de interesse relativo</div><div className="card-sub">Índices relativos por série regional; não indicam quantidade de pesquisas.</div></div><span className="tag">GOOGLE TRENDS</span></div>
-        <Table rows={rows} sort={sort} onPick={(r) => onPick(r.uf)} minPts={Infinity} />
-      </article>
+      {([["Destaques mais buscados", "TOP TERMS", rows.filter(isTop)], ["Destaques em ascensão", "TOP RISING", rows.filter((r) => !isTop(r))]] as [string, string, TrendRecord[]][]).map(([name, tag, list]) => (
+        <article className="card" key={tag} style={{ marginBottom: 12 }}>
+          <div className="card-head"><div><div className="card-title">{name}</div><div className="card-sub">Termos presentes no conjunto oficial {tag === "TOP TERMS" ? "Top Terms" : "Top Rising"} do Google Trends. Posição nacional exibida somente quando informada pela fonte; índices por UF são séries regionais e não indicam quantidade de pesquisas.</div></div><span className="tag">{tag}</span></div>
+          <Table rows={list} sort={sort} onPick={(r) => onPick(r.uf)} minPts={Infinity} />
+        </article>
+      ))}
     </>
   );
 }
@@ -248,5 +244,56 @@ export function RealCompare({ st, onPick }: { st: FeedState; onPick: (uf: string
       </div>
       {missing.length > 0 && <div className="notice" style={{ marginTop: 12 }}><span><strong>Sem dados:</strong> {missing.join(", ")} — ausência no feed, não índice zero.</span><span className="flag">{missing.length} UFs</span></div>}
     </>
+  );
+}
+
+function StateGroups({ rows, sort, setSort, focusUF, focusId, onPick, minPts }: { rows: TrendRecord[]; sort: RSort; setSort: (s: RSort) => void; focusUF: string; focusId?: string | undefined; onPick: (r: TrendRecord) => void; minPts: number }) {
+  const [open, setOpen] = useState<Set<string>>(() => new Set([focusUF]));
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    setOpen((o) => (o.has(focusUF) ? o : new Set(o).add(focusUF)));
+    const c = box.current;
+    const el = c?.querySelector<HTMLElement>(`[data-uf="${focusUF}"]`);
+    // Scroll only the inner list so the map and cards stay in place.
+    if (c && el) c.scrollTo({ top: el.offsetTop - c.offsetTop - 4, behavior: "smooth" });
+  }, [focusUF]);
+  const toggle = (uf: string) => setOpen((o) => { const n = new Set(o); if (n.has(uf)) n.delete(uf); else n.add(uf); return n; });
+  const groups = groupByUF(rows, UFS);
+  return (
+    <article className="card state-card">
+      <div className="card-head">
+        <div><div className="card-title">Destaques financeiros identificados no Google Trends · por estado</div>
+          <div className="card-sub">Índice 0–100 e variação em pontos entre semanas completas. Índices de termos diferentes são séries independentes.</div></div>
+        <div className="table-tools">
+          <select className="field" aria-label="Ordenação dos termos" value={sort} onChange={(e) => setSort(e.target.value as RSort)}>
+            {SORT_OPTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="state-list" ref={box} role="list" aria-label="Termos agrupados por estado">
+        {groups.map(({ uf, records }) => {
+          const isOpen = open.has(uf);
+          return (
+            <section key={uf} data-uf={uf} role="listitem" className={"state-group" + (uf === focusUF ? " focus" : "")}>
+              <button type="button" className="state-head" aria-expanded={isOpen} onClick={() => toggle(uf)}>
+                <span><strong>{UF_NAMES[uf]}</strong> <em>{uf}</em></span>
+                <small>{records.length ? `${records.length} ${records.length === 1 ? "termo" : "termos"} com dados` : "Sem dados disponíveis"}</small>
+                <i aria-hidden="true">{isOpen ? "−" : "+"}</i>
+              </button>
+              {isOpen && (records.length ? (
+                <div className="state-terms">
+                  {records.slice().sort(by(sort)).map((r) => (
+                    <button key={r.id} type="button" className={"state-term" + (r.id === focusId ? " active" : "")} onClick={() => onPick(r)}>
+                      <span><strong>{r.term}</strong><small>{r.source} · semana {fmtDate(r.week)} · fonte {fmtDate(r.sourceDate)}</small></span>
+                      <span className="state-nums"><b>{fmtIdx(r.indexNow)}</b><b className={"growth" + ((r.deltaPts ?? -Infinity) >= minPts ? " hot" : "")}>{fmtPts(r.deltaPts)}</b><small>{r.trend}</small></span>
+                    </button>
+                  ))}
+                </div>
+              ) : <div className="empty">Sem dados disponíveis para esta UF neste recorte. Ausência não equivale a índice zero.</div>)}
+            </section>
+          );
+        })}
+      </div>
+    </article>
   );
 }
