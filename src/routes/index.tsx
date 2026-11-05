@@ -175,7 +175,7 @@ function App() {
                 <div>
                   <div className="eyebrow">InvestSmart · Inteligência geográfica</div>
                   <h1>ONDE A DEMANDA <strong>ESTÁ CRESCENDO</strong></h1>
-                  <p className="subtitle">Temas de campanhas, termos mais buscados e explosões de interesse por UF — Google Trends × Google Ads.</p>
+                  <p className="subtitle">{isReal ? "Índice de interesse relativo (0–100) e variação semanal em pontos por UF — Google Trends." : "Temas de campanhas, termos mais buscados e explosões de interesse por UF — Google Trends × Google Ads."}</p>
                 </div>
                 <div className="head-tools">
                   <ModeSwitch mode={dataMode} setMode={setDataMode} />

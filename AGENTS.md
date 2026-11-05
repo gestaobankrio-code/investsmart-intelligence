@@ -31,3 +31,5 @@ use the editor.
 
 - InvestSmart UI styles live in `src/investsmart.css` (ported verbatim from the V12 HTML for visual fidelity); extend it there instead of ad-hoc classes.
 - Google Ads / Trends access happens only in `src/lib/intelligence.functions.ts` server adapters, disabled by flags until access is approved — never call Google from the browser.
+
+- Real Google Trends data is read only from the public GitHub Pages feed via `src/lib/trends-feed.ts` (browser fetch, no credentials); real and demo modes are rendered by separate components and never mixed.
