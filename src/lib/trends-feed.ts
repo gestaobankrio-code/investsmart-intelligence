@@ -19,6 +19,22 @@ export interface TrendRecord {
   /** Variação em PONTOS de índice; null quando não há semana anterior. */
   deltaPts: number | null;
   rankTop25: number | null;
+  /** Tendência informada pela fonte ou derivada apenas da variação em pontos. */
+  trend: Trend;
+}
+
+export type Trend = "Em alta" | "Em queda" | "Estável" | "Sem comparação";
+export const trendOf = (deltaPts: number | null, given?: unknown): Trend => {
+  if (deltaPts == null) return "Sem comparação";
+  const g = typeof given === "string" ? given.trim().toLowerCase() : "";
+  if (g.includes("alta") || g.includes("subida")) return "Em alta";
+  if (g.includes("queda")) return "Em queda";
+  if (g.includes("est")) return "Estável";
+  return deltaPts > 0 ? "Em alta" : deltaPts < 0 ? "Em queda" : "Estável";
+};
+/** Agrupa registros por UF (todas as 27, vazias incluídas, nunca preenchidas com zero). */
+export function groupByUF(records: TrendRecord[], ufs: string[]): { uf: string; records: TrendRecord[] }[] {
+  return ufs.map((uf) => ({ uf, records: records.filter((r) => r.uf === uf) }));
 }
 
 export interface TrendsFeed {
@@ -59,6 +75,7 @@ export function parseFeed(trends: unknown, status: unknown): TrendsFeed {
     seen.add(id);
     const now = idx(r["indiceAtual"]);
     const prev = idx(r["indiceAnterior"]);
+    const deltaPts = now != null && prev != null ? now - prev : null;
     records.push({
       id, uf, term,
       source: String(r["fonte"] ?? "").replace("ascensao", "ascensão").slice(0, 40) || "—",
@@ -66,8 +83,9 @@ export function parseFeed(trends: unknown, status: unknown): TrendsFeed {
       sourceDate: isoDate(r["dataFonte"]),
       indexNow: now,
       indexPrev: prev,
-      deltaPts: now != null && prev != null ? now - prev : null,
+      deltaPts,
       rankTop25: Number.isInteger(r["rankNacionalTop25"]) ? (r["rankNacionalTop25"] as number) : null,
+      trend: trendOf(deltaPts, r["tendencia"]),
     });
   }
   const dates = records.map((r) => r.sourceDate).filter(Boolean) as string[];
