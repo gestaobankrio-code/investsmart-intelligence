@@ -353,7 +353,7 @@ function BrazilMap({ rows, uf, focusUF, threshold, onSelect }: {
           {ordered.map((st) => {
             const arr = byUF.get(st.uf) || [];
             const sel = focusUF === st.uf;
-            let fill = arr.length ? (arr.some((s) => (s.growthPct ?? -Infinity) >= threshold) ? "#7040BA" : REGION_BASE[REGION[st.uf]]) : "#E5DDF0";
+            let fill = arr.length ? (arr.some((s) => (s.growthPct ?? -Infinity) >= threshold) ? "#7040BA" : REGION_BASE[REGION[st.uf] ?? ""]) : "#E5DDF0";
             if (uf && uf !== st.uf) fill = "#E5DDF0";
             return (
               <path key={st.uf} d={st.d} fill={fill} stroke={sel ? "#EBFF70" : "#fff"} strokeWidth={sel ? 2.2 : 0.8}
@@ -393,7 +393,7 @@ function Compare({ active, term, setTerm, onPick, mode, lastUpdate }: {
   active: Signal[]; term: string; setTerm: (t: string) => void; onPick: (uf: string, term: string) => void; mode: "demo" | "real"; lastUpdate: string | null;
 }) {
   const terms = [...new Set(active.map((s) => s.term))].sort((a, b) => a.localeCompare(b, "pt-BR"));
-  const t = term && terms.includes(term) ? term : terms[0];
+  const t = (term && terms.includes(term) ? term : terms[0]) ?? "";
   const data = active.filter((s) => s.term === t);
   const bars = (list: Signal[], key: "avgMonthlySearches" | "growthPct", fmt: (n: number | null) => string) => {
     if (!list.length) return <div className="empty">Dados indisponíveis.</div>;
