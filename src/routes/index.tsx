@@ -311,7 +311,7 @@ function Kpis({ rows, threshold }: { rows: Signal[]; threshold: number }) {
 }
 
 function SignalTable({ rows, sort, threshold, focus, onPick, labels }: {
-  rows: Signal[]; sort: SortKey; threshold: number; focus?: Signal; onPick: (s: Signal) => void; labels: string[];
+  rows: Signal[]; sort: SortKey; threshold: number; focus?: Signal | undefined; onPick: (s: Signal) => void; labels: string[];
 }) {
   const sorted = rows.slice().sort(sorter(sortField(sort))).slice(0, 160);
   return (
