@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import logo from "@/assets/investsmart-logo.png.asset.json";
-import { BRAZIL_STATES, MAP_VIEWBOX } from "@/data/brazil-map";
+import { BrazilMap, pinCount, type MapCell } from "@/components/BrazilMap";
+import { RealCompare, RealNotice, RealRadar, RealRanking, type FeedState } from "@/components/RealTrends";
+import { POLL_MS, fetchFeed, isStale } from "@/lib/trends-feed";
 import {
-  CATEGORIES, REGION, REGION_BASE, UFS, UF_NAMES,
+  CATEGORIES, REGION, UFS, UF_NAMES,
   demoForPeriod, fmtGrowth, fmtMoney, fmtNum, norm, normalizeAPIRow, sortField, sorter,
   type Signal, type SortKey, type SourceStatus,
 } from "@/lib/intelligence";
@@ -22,18 +24,6 @@ export const Route = createFileRoute("/")({
   }),
   component: App,
 });
-
-/** Quantidade máxima de marcadores no mapa (mesma regra usada pelo BrazilMap). */
-const MAX_PINS = 15;
-function pinCount(rows: Signal[], uf: string) {
-  return Math.min(new Set(rows.map((s) => s.uf)).size, uf ? 1 : MAX_PINS);
-}
-
-/** Deslocamento dos marcadores em UFs pequenas/adjacentes (coordenadas do viewBox 600x600). */
-const PIN_OFFSET: Record<string, [number, number]> = {
-  RN: [602, 124], PB: [602, 170], PE: [602, 216], AL: [602, 262], SE: [586, 308],
-  DF: [416, 294], GO: [350, 330], ES: [534, 374], RJ: [490, 432],
-};
 
 type View = "radar" | "ranking" | "compare" | "sources";
 const NAV: [View, string][] = [
@@ -64,11 +54,33 @@ function App() {
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const mode: "demo" | "real" = remote ? "real" : "demo";
-  const showToast = (t: string) => {
+  // Modo explícito: "trends" (feed público real) ou "demo". Nunca mesclados.
+  const [dataMode, setDataMode] = useState<"trends" | "demo">("trends");
+  const [feedSt, setFeedSt] = useState<FeedState>({ feed: null, error: null, readAt: null, loading: true });
+  const loadFeed = useCallback(async (manual = false) => {
+    setFeedSt((p) => ({ ...p, loading: true }));
+    try {
+      const feed = await fetchFeed();
+      const readAt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date());
+      setFeedSt({ feed, error: null, readAt, loading: false });
+      if (manual) showToast(`Feed relido: ${feed.records.length} registros${isStale(feed) ? " · dados desatualizados" : ""}. Nenhuma nova consulta ao Google foi feita.`);
+    } catch (e) {
+      const msg = String((e as Error)?.message || e);
+      setFeedSt((p) => ({ ...p, error: msg, loading: false }));
+      if (manual) showToast("Falha ao reler o feed: " + msg);
+    }
+  }, []);
+  useEffect(() => {
+    void loadFeed();
+    const id = setInterval(() => void loadFeed(), POLL_MS);
+    return () => clearInterval(id);
+  }, [loadFeed]);
+  const isReal = dataMode === "trends";
+  function showToast(t: string) {
     setToast(t);
     clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 3800);
-  };
+  }
 
   const active = useMemo(
     () => (remote ? remote.filter((s) => s.periodDays === period) : demoForPeriod(period)),
@@ -78,6 +90,15 @@ function App() {
     () => active.filter((s) => (!uf || s.uf === uf) && (!category || s.category === category) && (!onlyBurst || (s.growthPct ?? -Infinity) >= threshold)),
     [active, uf, category, onlyBurst, threshold],
   );
+
+  const demoCells = useMemo<MapCell[]>(() => {
+    const m = new Map<string, Signal[]>();
+    rows.forEach((r) => { if (!m.has(r.uf)) m.set(r.uf, []); m.get(r.uf)!.push(r); });
+    return [...m.entries()].map(([u, recs]) => {
+      const peak = Math.max(...recs.map((x) => x.growthPct ?? -Infinity));
+      return { uf: u, count: recs.length, peak, hot: peak >= threshold, title: `${UF_NAMES[u]} · ${recs.length} termos · pico de ${fmtGrowth(peak)} (demonstração)` };
+    });
+  }, [rows, threshold]);
 
   // Foco
   let fUF = uf || focusUF;
@@ -131,7 +152,7 @@ function App() {
           <strong>Central de Inteligência de Buscas</strong>
         </div>
         <div className="top-meta">
-          <span className="env"><i className="dot" />{mode === "real" ? "FONTES CONECTADAS" : "DADOS DE DEMONSTRAÇÃO"}</span>
+          <span className="env"><i className="dot" />{isReal ? (feedSt.feed ? "DADOS REAIS GOOGLE TRENDS" : "FEED INDISPONÍVEL") : "DADOS DE DEMONSTRAÇÃO"}</span>
           <div className="user-badge">IS</div>
         </div>
       </header>
@@ -154,14 +175,17 @@ function App() {
                 <div>
                   <div className="eyebrow">InvestSmart · Inteligência geográfica</div>
                   <h1>ONDE A DEMANDA <strong>ESTÁ CRESCENDO</strong></h1>
-                  <p className="subtitle">Temas de campanhas, termos mais buscados e explosões de interesse por UF — Google Trends × Google Ads.</p>
+                  <p className="subtitle">{isReal ? "Índice de interesse relativo (0–100) e variação semanal em pontos por UF — Google Trends." : "Temas de campanhas, termos mais buscados e explosões de interesse por UF — Google Trends × Google Ads."}</p>
                 </div>
                 <div className="head-tools">
+                  <ModeSwitch mode={dataMode} setMode={setDataMode} />
+                  {isReal ? <VerifyBtn st={feedSt} onClick={() => void loadFeed(true)} /> : (
                   <button type="button" className={"btn dark" + (loading ? " loading" : "")} disabled={loading} onClick={refresh}>
                     <span className="spinner">↻</span> Atualizar fontes
-                  </button>
+                  </button>)}
                 </div>
               </div>
+              {isReal ? (<><RealNotice st={feedSt} />{feedSt.feed && <RealRadar st={feedSt} uf={uf} setUf={setUf} focusUF={focusUF} setFocusUF={setFocusUF} />}</>) : (<>
               <Notice mode={mode} lastUpdate={lastUpdate} />
               <div className="filters">
                 <div className="filter"><label htmlFor="fPeriod">Período de análise</label>
@@ -187,7 +211,7 @@ function App() {
                   <label className="toggle"><input type="checkbox" checked={onlyBurst} onChange={(e) => setOnlyBurst(e.target.checked)} />Só explosões</label>
                 </div>
               </div>
-              <Kpis rows={rows} threshold={threshold} pins={pinCount(rows, uf)} />
+              <Kpis rows={rows} threshold={threshold} pins={pinCount(demoCells, uf)} />
               <div className="radar-grid">
                 <article className="card map-card">
                   <div className="card-head">
@@ -195,7 +219,7 @@ function App() {
                       <div className="card-sub">Clique em um estado ou nos marcadores de explosão para ver os termos daquela UF.</div></div>
                     <span className="tag dark">27 UFs INTERATIVAS</span>
                   </div>
-                  <BrazilMap rows={rows} uf={uf} focusUF={fUF} threshold={threshold} onSelect={selectState} />
+                  <BrazilMap cells={demoCells} uf={uf} focusUF={fUF} onSelect={selectState} hint="Áreas em roxo: estados com sinais. Pontos neon: crescimento acima do limite selecionado." hotLabel={`Pico ≥ ${threshold}%`} coldLabel={`Pico abaixo de ${threshold}%`} />
                 </article>
                 <aside className="card detail" aria-live="polite">
                   {!current ? (
@@ -252,12 +276,15 @@ function App() {
                   </div>
                 </aside>
               </div>
+              </>)}
             </section>
           )}
 
           {view === "ranking" && (
             <section>
-              <div className="pagehead"><div><div className="eyebrow">Inteligência por UF</div><h1>RANKING DE <strong>BUSCAS REGIONAIS</strong></h1><p className="subtitle">Ranking de termos por estado, com volume médio e pressão de anúncios; sem monitoramento de campanhas em veiculação.</p></div></div>
+              <div className="pagehead"><div><div className="eyebrow">Inteligência por UF</div><h1>RANKING DE <strong>BUSCAS REGIONAIS</strong></h1><p className="subtitle">{isReal ? "Ranking de termos por estado pelo índice de interesse relativo do Google Trends (0–100)." : "Ranking de termos por estado, com volume médio e pressão de anúncios; sem monitoramento de campanhas em veiculação."}</p></div>
+                <div className="head-tools"><ModeSwitch mode={dataMode} setMode={setDataMode} />{isReal && <VerifyBtn st={feedSt} onClick={() => void loadFeed(true)} />}</div></div>
+              {isReal ? (<><RealNotice st={feedSt} />{feedSt.feed && <RealRanking st={feedSt} onPick={(s) => { setUf(s); setFocusUF(s); setView("radar"); }} />}</>) : (<>
               <Notice mode={mode} lastUpdate={lastUpdate} />
               <div className="filters">
                 <div className="filter big"><label htmlFor="rankingSearch">Buscar palavra-chave</label><input className="field" id="rankingSearch" placeholder="Ex.: CDB, Tesouro, assessor..." value={rankSearch} onChange={(e) => setRankSearch(e.target.value)} /></div>
@@ -272,17 +299,26 @@ function App() {
                   labels={["Tema", "Palavra-chave", "Crescimento Trends", "Índice Trends", "Volume médio Ads", "CPC médio Ads"]}
                 />
               </article>
+              </>)}
             </section>
           )}
 
-          {view === "compare" && (
-            <Compare active={active} term={compareTerm} setTerm={setCompareTerm} mode={mode} lastUpdate={lastUpdate}
+          {view === "compare" && isReal && (
+            <section>
+              <div className="pagehead"><div><div className="eyebrow">Cross-state intelligence</div><h1>COMPARAR <strong>ESTADOS</strong></h1><p className="subtitle">Selecione um termo e compare o índice de interesse relativo e a variação semanal em pontos entre UFs.</p></div>
+                <div className="head-tools"><ModeSwitch mode={dataMode} setMode={setDataMode} /><VerifyBtn st={feedSt} onClick={() => void loadFeed(true)} /></div></div>
+              <RealNotice st={feedSt} />
+              {feedSt.feed && <RealCompare st={feedSt} onPick={(s) => { setUf(s); setFocusUF(s); setView("radar"); }} />}
+            </section>
+          )}
+          {view === "compare" && !isReal && (
+            <Compare modeSwitch={<ModeSwitch mode={dataMode} setMode={setDataMode} />} active={active} term={compareTerm} setTerm={setCompareTerm} mode={mode} lastUpdate={lastUpdate}
               onPick={(s, term) => { setFocusUF(s); setUf(s); setFocusTerm(term); setView("radar"); }} />
           )}
 
-          {view === "sources" && <Sources status={status} checkedAt={checkedAt} mode={mode} />}
+          {view === "sources" && <Sources status={status} checkedAt={checkedAt} mode={mode} feed={feedSt} isReal={isReal} />}
 
-          <footer className="footer"><span>INVESTSMART · SEARCH INTELLIGENCE</span><span>{mode === "demo" ? "Dados demonstrativos · Integrações pendentes" : "Dados das fontes conectadas"}</span></footer>
+          <footer className="footer"><span>INVESTSMART · SEARCH INTELLIGENCE</span><span>{isReal ? "Google Trends · índice relativo 0–100 · cobertura parcial" : "Dados demonstrativos · Integrações pendentes"}</span></footer>
         </main>
       </div>
       <div className={"toast" + (toast ? " show" : "")} role="status">{toast}</div>
@@ -347,80 +383,8 @@ function SignalTable({ rows, sort, threshold, focus, onPick, labels }: {
   );
 }
 
-function BrazilMap({ rows, uf, focusUF, threshold, onSelect }: {
-  rows: Signal[]; uf: string; focusUF: string; threshold: number; onSelect: (s: string) => void;
-}) {
-  const byUF = new Map<string, Signal[]>();
-  rows.forEach((s) => { if (!byUF.has(s.uf)) byUF.set(s.uf, []); byUF.get(s.uf)!.push(s); });
-  const peaks = [...byUF.entries()].map(([state, recs]) => ({ state, count: recs.length, peak: Math.max(...recs.map((x) => x.growthPct ?? -Infinity)) }));
-  const pins = peaks
-    .sort((a, b) => Number(b.state === focusUF) - Number(a.state === focusUF) || b.peak - a.peak)
-    .slice(0, uf ? 1 : MAX_PINS);
-  const ordered = [...BRAZIL_STATES].sort((a, b) => Number(a.uf === focusUF) - Number(b.uf === focusUF));
-
-  return (
-    <div className="map-stage">
-      <div className="br-map-wrap">
-        <svg className="br-map" viewBox={MAP_VIEWBOX} role="img" aria-label="Mapa interativo dos estados brasileiros">
-          {ordered.map((st) => {
-            const arr = byUF.get(st.uf) || [];
-            const sel = focusUF === st.uf;
-            let fill = arr.length ? (arr.some((s) => (s.growthPct ?? -Infinity) >= threshold) ? "#7040BA" : REGION_BASE[REGION[st.uf] ?? ""]) : "#E5DDF0";
-            if (uf && uf !== st.uf) fill = "#E5DDF0";
-            return (
-              <path key={st.uf} d={st.d} fill={fill} stroke={sel ? "#EBFF70" : "#fff"} strokeWidth={sel ? 2.2 : 0.8}
-                style={{ filter: sel ? "drop-shadow(0 0 5px rgba(153,102,255,.6))" : undefined }}
-                aria-label={UF_NAMES[st.uf]} role="button" tabIndex={0}
-                onClick={() => onSelect(st.uf)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(st.uf); } }}>
-                <title>{UF_NAMES[st.uf]}</title>
-              </path>
-            );
-          })}
-        </svg>
-        <svg className="pin-leaders" viewBox={MAP_VIEWBOX} aria-hidden="true">
-          {pins.map((p) => {
-            const st = BRAZIL_STATES.find((s) => s.uf === p.state);
-            const off = PIN_OFFSET[p.state];
-            if (!st || !off) return null;
-            return (
-              <g key={p.state}>
-                <line x1={st.cx} y1={st.cy} x2={off[0]} y2={off[1]} />
-                <circle cx={st.cx} cy={st.cy} r={2.6} />
-              </g>
-            );
-          })}
-        </svg>
-        <div className="map-pins">
-          {pins.map((p) => {
-            const st = BRAZIL_STATES.find((s) => s.uf === p.state);
-            if (!st) return null;
-            const burst = p.peak >= threshold;
-            const [px, py] = PIN_OFFSET[p.state] ?? [st.cx, st.cy];
-            const title = `${UF_NAMES[p.state]} · ${p.count} termos · pico de ${fmtGrowth(p.peak)}`;
-            return (
-              <button key={p.state} type="button" title={title} aria-label={title}
-                className={"pin" + (PIN_OFFSET[p.state] ? " side" : "") + (burst ? " burst" : "") + (focusUF === p.state ? " selected" : "")}
-                style={{ left: `${(px / 600) * 100}%`, top: `${(py / 600) * 100}%` }}
-                onClick={() => onSelect(p.state)}>
-                {burst ? "✳" : "•"}<span className="pin-label">{p.state}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      <div className="map-hint">Áreas em roxo: estados com sinais. Pontos neon: crescimento acima do limite selecionado.</div>
-      <div className="legend">
-        {pins.some((p) => p.peak >= threshold) && <span><b /> Pico ≥ {threshold}%</span>}
-        {pins.some((p) => p.peak < threshold) && <span><b className="regular" /> Pico abaixo de {threshold}%</span>}
-        {pins.length < byUF.size && <span>Top {pins.length} de {byUF.size} UFs</span>}
-      </div>
-    </div>
-  );
-}
-
-function Compare({ active, term, setTerm, onPick, mode, lastUpdate }: {
-  active: Signal[]; term: string; setTerm: (t: string) => void; onPick: (uf: string, term: string) => void; mode: "demo" | "real"; lastUpdate: string | null;
+function Compare({ active, term, setTerm, onPick, mode, lastUpdate, modeSwitch }: {
+  modeSwitch: ReactNode; active: Signal[]; term: string; setTerm: (t: string) => void; onPick: (uf: string, term: string) => void; mode: "demo" | "real"; lastUpdate: string | null;
 }) {
   const terms = [...new Set(active.map((s) => s.term))].sort((a, b) => a.localeCompare(b, "pt-BR"));
   const t = (term && terms.includes(term) ? term : terms[0]) ?? "";
@@ -438,7 +402,7 @@ function Compare({ active, term, setTerm, onPick, mode, lastUpdate }: {
   };
   return (
     <section>
-      <div className="pagehead"><div><div className="eyebrow">Cross-state intelligence</div><h1>COMPARAR <strong>ESTADOS</strong></h1><p className="subtitle">Selecione um termo e compare a procura estimada e a aceleração da demanda entre UFs. Escalas de Trends só devem ser comparadas quando obtidas sob metodologia equivalente.</p></div></div>
+      <div className="pagehead"><div><div className="eyebrow">Cross-state intelligence</div><h1>COMPARAR <strong>ESTADOS</strong></h1><p className="subtitle">Selecione um termo e compare a procura estimada e a aceleração da demanda entre UFs. Escalas de Trends só devem ser comparadas quando obtidas sob metodologia equivalente.</p></div><div className="head-tools">{modeSwitch}</div></div>
       <Notice mode={mode} lastUpdate={lastUpdate} />
       <div className="compare-controls">
         <select className="field" aria-label="Termo comparado" value={t} onChange={(e) => setTerm(e.target.value)}>
@@ -463,11 +427,31 @@ const STATUS_LABEL: Record<string, [string, string]> = {
   disabled: ["DESABILITADO", "off"],
 };
 
-function Sources({ status, checkedAt, mode }: { status: SourceStatus; checkedAt: string | null; mode: "demo" | "real" }) {
+function ModeSwitch({ mode, setMode }: { mode: "trends" | "demo"; setMode: (m: "trends" | "demo") => void }) {
+  return (
+    <div role="group" aria-label="Modo de dados" style={{ display: "inline-flex", gap: 6 }}>
+      <button type="button" className={"btn" + (mode === "trends" ? " dark" : "")} aria-pressed={mode === "trends"} onClick={() => setMode("trends")}>Dados reais Google Trends</button>
+      <button type="button" className={"btn" + (mode === "demo" ? " dark" : "")} aria-pressed={mode === "demo"} onClick={() => setMode("demo")}>Demonstração</button>
+    </div>
+  );
+}
+
+function VerifyBtn({ st, onClick }: { st: FeedState; onClick: () => void }) {
+  return (
+    <button type="button" className={"btn" + (st.loading ? " loading" : "")} disabled={st.loading} onClick={onClick}>
+      <span className="spinner">↻</span> Verificar atualizações
+    </button>
+  );
+}
+
+function Sources({ status, checkedAt, mode, feed, isReal }: { status: SourceStatus; checkedAt: string | null; mode: "demo" | "real"; feed: FeedState; isReal: boolean }) {
   const items: [string, string, string, string][] = [
     ["ADS", "Google Ads API", status.google_ads, "Projeto Google Cloud investsmart-intelligence. API habilitada, nível Explorer aprovado e leitura via GAQL validada com conta de serviço. KeywordPlanIdeaService (volume, CPC, concorrência, dados geográficos) aguarda aprovação BASIC e não é acionado."],
     ["TR", "Google Trends API", status.google_trends, "Inscrição no programa oficial Alpha enviada; aprovação pendente. Adaptador preparado, sem scraping e sem simular conexão."],
-    ["DM", "Dados demonstrativos", mode === "demo" ? "demo" : "disabled", "Valores fictícios, determinísticos e explicitamente identificados. Não são números aleatórios nem representam dados reais do Google."],
+    ["FD", "Feed público Google Trends", feed.feed ? "feed_ok" : feed.loading ? "feed_loading" : "feed_error", feed.feed
+      ? `Leitura somente leitura de trends.json e status.json (GitHub Pages), sem credenciais. ${feed.feed.records.length} registros · ${feed.feed.terms.length} termos.${feed.feed.isStaticSample ? " Conteúdo atual: AMOSTRA INICIAL ESTÁTICA; coleta automatizada ainda não validada." : ""}`
+      : `Feed público não pôde ser lido${feed.error ? `: ${feed.error}` : ""}. Nenhum dado substituto é exibido no modo real.`],
+    ["DM", "Dados demonstrativos", !isReal ? "demo" : "disabled", "Valores fictícios, determinísticos e explicitamente identificados. Não são números aleatórios nem representam dados reais do Google."],
   ];
   return (
     <section>
@@ -475,7 +459,7 @@ function Sources({ status, checkedAt, mode }: { status: SourceStatus; checkedAt:
       <div className="notice"><span><strong>Segurança:</strong> credenciais Google Ads, tokens OAuth e segredos nunca ficam no navegador. A consulta às fontes ocorre apenas no servidor.</span><span className="flag">{checkedAt ? `VERIFICADO: ${checkedAt}` : "INTEGRAÇÕES PENDENTES"}</span></div>
       <div className="method-grid">
         {items.map(([ic, name, st, desc]) => {
-          const [label, tone] = st === "demo" ? ["EM USO", "demo"] : STATUS_LABEL[st] ?? [st, "off"];
+          const [label, tone] = st === "demo" ? ["EM USO", "demo"] : st === "feed_ok" ? [feed.feed && isStale(feed.feed) ? "LIDO · DESATUALIZADO" : "LIDO", feed.feed && isStale(feed.feed) ? "warn" : "ok"] : st === "feed_loading" ? ["VERIFICANDO", "off"] : st === "feed_error" ? ["FALHA NA LEITURA", "warn"] : STATUS_LABEL[st] ?? [st, "off"];
           return (
             <article className="card method" key={name}>
               <span className="method-ic">{ic}</span>
@@ -487,6 +471,7 @@ function Sources({ status, checkedAt, mode }: { status: SourceStatus; checkedAt:
         })}
       </div>
       <div className="method-grid" style={{ marginTop: 12 }}>
+        <article className="card method"><span className="method-ic">FD</span><h3>Modo Dados reais Google Trends</h3><p>Os dados públicos vêm dos destaques nacionais <strong>Top 25</strong> e <strong>Top Rising</strong> do Google Trends e das suas séries por UF, com <strong>cobertura parcial</strong>. Exibe-se apenas o índice de interesse relativo (0–100) e a variação em <strong>pontos de índice</strong> entre semanas completas; sem índice anterior, “Sem comparação”. UF ausente significa “Sem dados”, não zero. Esses índices <strong>não indicam quantidade absoluta de pesquisas nem tamanho de mercados estaduais</strong>; volume, CPC e concorrência não são exibidos neste modo. O feed é relido ao abrir a página, a cada 30 minutos e pelo botão “Verificar atualizações” — sem novas consultas ao BigQuery. Dados com mais de 14 dias são marcados como desatualizados.</p></article>
         <article className="card method"><span className="method-ic">TR</span><h3>Métricas do Trends</h3><p>Evolução relativa, índice de interesse (0–100), distribuição por estado e consultas em ascensão. Índices são relativos ao recorte e só são comparáveis entre UFs sob a mesma janela e metodologia.</p></article>
         <article className="card method"><span className="method-ic">ADS</span><h3>Métricas do Keyword Planner</h3><p>Médias mensais de pesquisa, concorrência e faixas de lance. O <strong>CPC médio</strong> histórico é condicional (<code>include_average_cpc</code>) e pode ficar indisponível; quando ausente, a interface mostra “Indisponível”.</p></article>
         <article className="card method"><span className="method-ic">↻</span><h3>Atualização sob demanda</h3><p>“Atualizar fontes” envia período, UF e tema ao servidor, que consulta os conectores habilitados e normaliza os dados. Sem conector aprovado, a plataforma mantém apenas o protótipo ilustrativo.</p></article>
