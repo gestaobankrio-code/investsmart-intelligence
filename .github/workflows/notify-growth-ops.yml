@@ -1,0 +1,48 @@
+name: Notificar Growth Ops
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  notify:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ler Lovable Project ID
+        id: meta
+        env:
+          FALLBACK_ID: ${{ secrets.LOVABLE_PROJECT_ID }}
+        run: |
+          ID=$(jq -r '.lovableProjectId // empty' lovable.json 2>/dev/null || true)
+          [ -z "$ID" ] && ID="$FALLBACK_ID"
+          if ! echo "$ID" | grep -qE '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'; then
+            echo "::error::Lovable Project ID ausente ou inválido"; exit 1
+          fi
+          echo "id=$ID" >> "$GITHUB_OUTPUT"
+
+      - name: Disparar repository_dispatch para o Growth Ops
+        env:
+          GROWTH_OPS_PAT: ${{ secrets.GROWTH_OPS_PAT }}
+          LOVABLE_ID: ${{ steps.meta.outputs.id }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ -z "$GROWTH_OPS_PAT" ]; then
+            echo "::error::Secret GROWTH_OPS_PAT não configurado neste repositório"; exit 1
+          fi
+          BODY=$(jq -n \
+            --arg id "$LOVABLE_ID" --arg repo "$GITHUB_REPOSITORY" --arg sha "$GITHUB_SHA" \
+            --arg ref "$REF_NAME" --arg msg "$COMMIT_MSG" \
+            '{event_type:"lovable_sync", client_payload:{lovableProjectId:$id, githubRepository:$repo, commitSha:$sha, ref:$ref, commitMessage:($msg|.[0:500]), nome:"InvestSmart Intelligence", publicUrl:"https://investsmart-intelligence.lovable.app", tipo:"Aplicação/Plataforma"}}')
+          CODE=$(curl -s -o resp.txt -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer $GROWTH_OPS_PAT" -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/gestaobankrio-code/growth-ops-investsmart/dispatches -d "$BODY")
+          cat resp.txt
+          [ "$CODE" = "204" ] || { echo "::error::Falha no dispatch (HTTP $CODE)"; exit 1; }
+          echo "Dispatch enviado para lovable $LOVABLE_ID commit $GITHUB_SHA"
