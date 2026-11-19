@@ -1,6 +1,6 @@
 # InvestSmart Intelligence
 
-Central de inteligência regional da InvestSmart para leitura de sinais financeiros do Google Trends por UF.
+Central de inteligência regional da InvestSmart com os termos efetivamente publicados pelo Google Trends Top 25 e Top Rising para o Brasil, sem lista de termos predefinidos. A fonte não é restrita a finanças e não representa todas as pesquisas realizadas.
 
 **Aplicação:** https://investsmart-intelligence.lovable.app  
 **Lovable Project ID:** `59f4d220-1c73-44be-85dc-800f8b5d8995`
@@ -34,7 +34,7 @@ O workflow `.github/workflows/quality.yml` é obrigatório na `main` e executa:
 
 ## Fonte de dados
 
-Os dados atuais foram extraídos do Google Trends Public Dataset no BigQuery. Os índices do Google Trends são relativos (0–100) e não equivalem a volume absoluto de pesquisas.
+Os dados são extraídos do Google Trends Public Dataset no BigQuery, selecionando todos os termos presentes nos destaques Brasil da fonte, sem filtros por palavras-chave ou tema. Não é correto apresentar o conjunto como exclusivamente financeiro. Os índices do Google Trends são relativos (0–100) e não equivalem a volume absoluto de pesquisas.
 
 Google Ads Keyword Planner e Google Trends API não são utilizados pela interface pública enquanto seus respectivos acessos não estiverem aprovados/configurados.
 
