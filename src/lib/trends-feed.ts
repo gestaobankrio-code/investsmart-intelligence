@@ -36,6 +36,42 @@ export interface TrendRecord {
 }
 
 export type Trend = "Em alta" | "Em queda" | "Estável" | "Sem comparação";
+
+export interface NationalTermSummary {
+  term: string;
+  source: string;
+  ufs: number;
+  risingUFs: number;
+  fallingUFs: number;
+  stableUFs: number;
+  unknownUFs: number;
+  latestDate: string | null;
+  records: TrendRecord[];
+}
+
+/** O termo nacional é exibido UMA VEZ; as UFs são apenas séries daquele termo. */
+export function summarizeNationalTerms(rows: TrendRecord[]): NationalTermSummary[] {
+  const grouped = new Map<string, TrendRecord[]>();
+  for (const record of rows) {
+    const previous = grouped.get(record.term) ?? [];
+    previous.push(record);
+    grouped.set(record.term, previous);
+  }
+  return [...grouped.entries()]
+    .map(([term, records]) => ({
+      term,
+      source: records[0]?.source ?? "—",
+      ufs: new Set(records.map((r) => r.uf)).size,
+      risingUFs: records.filter((r) => r.trend === "Em alta").length,
+      fallingUFs: records.filter((r) => r.trend === "Em queda").length,
+      stableUFs: records.filter((r) => r.trend === "Estável").length,
+      unknownUFs: records.filter((r) => r.trend === "Sem comparação").length,
+      latestDate: records.map((r) => r.sourceDate).filter((v): v is string => Boolean(v)).sort().at(-1) ?? null,
+      records,
+    }))
+    .sort((a, b) => b.risingUFs - a.risingUFs || a.term.localeCompare(b.term, "pt-BR"));
+}
+
 export const trendOf = (deltaPts: number | null, given?: unknown): Trend => {
   if (deltaPts == null) return "Sem comparação";
   const g = typeof given === "string" ? given.trim().toLowerCase() : "";
