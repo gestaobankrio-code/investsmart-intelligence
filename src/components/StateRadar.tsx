@@ -204,7 +204,7 @@ export function StateRadar({
                       </small>
                       <small className="regional-context">Origem comprovada: {record.geo}</small>
                     </span>
-                    <span className="heat-pill warm">Em destaque</span>
+                    <span className="heat-pill unknown">Em destaque</span>
                   </a>
                 </div>
               ))}
