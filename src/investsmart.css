@@ -1770,7 +1770,7 @@ header.top {
   color: #fff;
   overflow: hidden;
   isolation: isolate;
-  animation: splash-dismiss 270ms ease 1070ms forwards;
+  animation: splash-dismiss 270ms ease 3330ms forwards;
 }
 .splash-ambient {
   position: absolute;
