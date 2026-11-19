@@ -37,6 +37,28 @@ export interface TrendRecord {
 
 export type Trend = "Em alta" | "Em queda" | "Estável" | "Sem comparação";
 
+/** Temperatura da EVOLUÇÃO, não do volume absoluto nem de oportunidade comercial. */
+export type HeatLevel = "Quente" | "Morno" | "Frio" | "Sem comparação";
+
+export function heatOfDelta(deltaPts: number | null): HeatLevel {
+  if (deltaPts == null || !Number.isFinite(deltaPts)) return "Sem comparação";
+  return deltaPts > 0 ? "Quente" : deltaPts < 0 ? "Frio" : "Morno";
+}
+
+export function heatOfRegionalSummary(summary: {
+  risingUFs: number;
+  fallingUFs: number;
+  stableUFs: number;
+}): HeatLevel | "Misto" {
+  const { risingUFs, fallingUFs, stableUFs } = summary;
+  if (risingUFs + fallingUFs + stableUFs === 0) return "Sem comparação";
+  if (risingUFs > fallingUFs + stableUFs) return "Quente";
+  if (fallingUFs > risingUFs + stableUFs) return "Frio";
+  if (stableUFs > risingUFs + fallingUFs) return "Morno";
+  return "Misto";
+}
+
+
 export interface NationalTermSummary {
   term: string;
   source: string;
