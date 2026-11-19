@@ -98,6 +98,60 @@ export function summarizeNationalTerms(rows: TrendRecord[]): NationalTermSummary
     .sort((a, b) => b.risingUFs - a.risingUFs || a.term.localeCompare(b.term, "pt-BR"));
 }
 
+/**
+ * Seleciona os movimentos regionais que realmente diferem do comportamento do
+ * MESMO termo, na MESMA semana, nas demais UFs disponíveis.
+ * Não inventa palavras-chave estaduais, volumes ou métricas do Google Ads.
+ */
+export interface RegionalDifferential {
+  record: TrendRecord;
+  direction: "Acima da mediana" | "Abaixo da mediana";
+  difference: number;
+}
+
+function median(numbers: number[]): number | null {
+  if (!numbers.length) return null;
+  const ordered = [...numbers].sort((a, b) => a - b);
+  const mid = Math.floor(ordered.length / 2);
+  return ordered.length % 2
+    ? ordered[mid]
+    : (ordered[mid - 1] + ordered[mid]) / 2;
+}
+
+export function regionalDifferentials(
+  records: TrendRecord[],
+  uf: string,
+): RegionalDifferential[] {
+  const weeklyByTerm = new Map<string, number[]>();
+  for (const record of records) {
+    if (record.deltaPts == null || !Number.isFinite(record.deltaPts) || !record.week) continue;
+    const key = `${record.term}|${record.week}`;
+    const list = weeklyByTerm.get(key) ?? [];
+    list.push(record.deltaPts);
+    weeklyByTerm.set(key, list);
+  }
+  return records
+    .filter((record) => record.uf === uf && record.deltaPts != null && record.week)
+    .flatMap((record) => {
+      const sample = weeklyByTerm.get(`${record.term}|${record.week}`) ?? [];
+      // Um único registro não permite afirmar que o estado se distingue dos demais.
+      if (sample.length < 3) return [];
+      const reference = median(sample);
+      if (reference == null || record.deltaPts == null) return [];
+      const difference = record.deltaPts - reference;
+      if (difference === 0) return [];
+      return [{
+        record,
+        direction: difference > 0 ? "Acima da mediana" as const : "Abaixo da mediana" as const,
+        difference,
+      }];
+    })
+    .sort((a, b) =>
+      Math.abs(b.difference) - Math.abs(a.difference) ||
+      a.record.term.localeCompare(b.record.term, "pt-BR"),
+    );
+}
+
 export const trendOf = (deltaPts: number | null, given?: unknown): Trend => {
   if (deltaPts == null) return "Sem comparação";
   const g = typeof given === "string" ? given.trim().toLowerCase() : "";
