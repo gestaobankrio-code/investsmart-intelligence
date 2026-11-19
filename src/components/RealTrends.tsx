@@ -110,13 +110,17 @@ export function RealRadar({
     .filter((r) => r.uf === selectedUF)
     .sort((a, b) => a.term.localeCompare(b.term, "pt-BR"));
   const differentials = useMemo(
-    () => regionalDifferentials(rows, selectedUF),
-    [rows, selectedUF],
+    () =>
+      regionalDifferentials(all, selectedUF).filter(
+        (item) =>
+          (!term || item.record.term === term) &&
+          (!onlyUp || item.record.trend === "Em alta"),
+      ),
+    [all, selectedUF, term, onlyUp],
   );
   const highlighted = differentials.slice(0, 5);
-  const visibleStateRecords = showAllStateTerms
-    ? stateRecords
-    : highlighted.map((item) => item.record);
+  const visibleStateRecords =
+    showAllStateTerms || term ? stateRecords : highlighted.map((item) => item.record);
   const cells = useMemo(() => regionalCells(rows), [rows]);
   const statesWithRise = new Set(rows.filter((r) => r.trend === "Em alta").map((r) => r.uf)).size;
   const selectState = (next: string) => {
