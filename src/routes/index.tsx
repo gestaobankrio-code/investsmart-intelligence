@@ -314,6 +314,13 @@ function FeedEmptyState({ st, onRetry }: { st: FeedState; onRetry: () => void })
 function Sources({ feed }: { feed: FeedState }) {
   const items: [string, string, string, string, string][] = [
     [
+      "UF",
+      "Google Trends por estado",
+      "RSS · ORIGEM ESTADUAL",
+      "ok",
+      "O Radar consulta separadamente geo=BR-UF e mostra somente termos financeiros presentes no RSS daquela UF. Uma consulta sem termos financeiros não é preenchida com destaques nacionais.",
+    ],
+    [
       "ADS",
       "Google Ads API",
       "EXPLORER · NÃO CONECTADO",
@@ -329,7 +336,7 @@ function Sources({ feed }: { feed: FeedState }) {
     ],
     [
       "FD",
-      "Feed público Google Trends",
+      "Destaques nacionais do BigQuery",
       feed.feed
         ? isStale(feed.feed)
           ? "LIDO · DESATUALIZADO"
@@ -347,7 +354,7 @@ function Sources({ feed }: { feed: FeedState }) {
     <>
       <div className="notice">
         <span>
-          <strong>Segurança:</strong> o navegador lê somente os dois arquivos públicos no GitHub
+          <strong>Segurança:</strong> o navegador lê os feeds estaduais e nacionais publicados no GitHub
           Pages, sem credenciais Google e sem consultas diretas ao BigQuery ou às APIs Google Ads e
           Google Trends.
         </span>
@@ -368,10 +375,10 @@ function Sources({ feed }: { feed: FeedState }) {
           <span className="method-ic">FD</span>
           <h3>Dados reais Google Trends</h3>
           <p>
-            Termos extraídos dos destaques reais do Brasil e classificados por pertinência
+            Nos módulos nacionais, termos do BigQuery são classificados por pertinência
             financeira. A temperatura indica direção do interesse: quente quando cresce, morno
             quando estável e frio quando cai. Termos sem histórico ficam como “Sem comparação”. A
-            fonte oferece cobertura parcial por UF, não volumes absolutos de pesquisa.
+            fonte possui cobertura parcial; o Radar usa outra fonte, o RSS específico por UF.
           </p>
         </article>
         <article className="card method">
@@ -387,7 +394,7 @@ function Sources({ feed }: { feed: FeedState }) {
           <span className="method-ic">↻</span>
           <h3>Verificação do feed</h3>
           <p>
-            Releitura ao abrir a plataforma, a cada 30 minutos e pela verificação manual, sem novas
+            Releitura dos feeds públicos ao abrir a plataforma, a cada 30 minutos e pela verificação manual, sem novas
             consultas ao BigQuery. Dados com mais de 3 dias são marcados como desatualizados. A
             verificação do feed não confirma nova extração nem agendamento automático.
           </p>
@@ -405,7 +412,7 @@ function Sources({ feed }: { feed: FeedState }) {
       <article className="card flow">
         <div className="flow-box">
           <strong>Extração validada</strong>
-          <small>Google Trends · BigQuery</small>
+          <small>RSS por UF + BigQuery nacional</small>
         </div>
         <span className="arrow">→</span>
         <div className="flow-box">
@@ -415,7 +422,7 @@ function Sources({ feed }: { feed: FeedState }) {
         <span className="arrow">→</span>
         <div className="flow-box">
           <strong>Radar interativo</strong>
-          <small>Temperatura real por UF</small>
+          <small>Descoberta estadual / evolução nacional</small>
         </div>
       </article>
     </>
