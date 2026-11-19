@@ -5,12 +5,7 @@ import { AppSplash } from "@/components/AppSplash";
 import { StateRadar } from "@/components/StateRadar";
 import logo from "@/assets/investsmart-logo.png.asset.json";
 import { Button } from "@/components/ui/button";
-import {
-  RealCompare,
-  RealNotice,
-  RealRanking,
-  type FeedState,
-} from "@/components/RealTrends";
+import { RealCompare, RealNotice, RealRanking, type FeedState } from "@/components/RealTrends";
 import { POLL_MS, feedAgeDays, fetchFeed, fmtDateTime, isStale } from "@/lib/trends-feed";
 
 export const Route = createFileRoute("/")({
@@ -198,8 +193,8 @@ function App() {
           <div className="side-foot">
             <strong>Inteligência regional</strong>
             <br />
-            Tendências por UF consultadas diretamente no RSS estadual. O BigQuery nacional
-            permanece em um módulo separado.
+            Tendências por UF consultadas diretamente no RSS estadual. O BigQuery nacional permanece
+            em um módulo separado.
           </div>
         </aside>
         <main className="main" id="conteudo-principal" tabIndex={-1}>
@@ -218,7 +213,9 @@ function App() {
                   onClick={() => {
                     if (view === "radar") {
                       setStateRefreshVersion((value) => value + 1);
-                      showToast("Reconsultando o feed estadual publicado, sem inventar novos termos.");
+                      showToast(
+                        "Reconsultando o feed estadual publicado, sem inventar novos termos.",
+                      );
                     } else {
                       void loadFeed(true);
                     }

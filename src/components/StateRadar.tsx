@@ -74,9 +74,13 @@ export function StateRadar({
   if (!feed) {
     return (
       <section className={"system-state " + (error ? "error" : "loading")} role="status">
-        <div className="system-state-icon" aria-hidden="true">{loading ? "↻" : "!"}</div>
+        <div className="system-state-icon" aria-hidden="true">
+          {loading ? "↻" : "!"}
+        </div>
         <div>
-          <strong>{loading ? "Consultando tendências estaduais" : "Fonte estadual indisponível"}</strong>
+          <strong>
+            {loading ? "Consultando tendências estaduais" : "Fonte estadual indisponível"}
+          </strong>
           <p>
             {error
               ? "Não é possível comprovar quais termos foram descobertos em cada UF. A plataforma não substitui essa informação pelas tendências nacionais."
@@ -98,14 +102,16 @@ export function StateRadar({
           {" · "}Última consulta: {fmtDateTime(feed.generatedAt)}
           {error && <> · Última atualização falhou; exibindo coleta anterior</>}
         </span>
-        <span className="flag">{sourceOld ? "REVISAR ATUALIZAÇÃO" : "SEM TERMOS NACIONAIS REPLICADOS"}</span>
+        <span className="flag">
+          {sourceOld ? "REVISAR ATUALIZAÇÃO" : "SEM TERMOS NACIONAIS REPLICADOS"}
+        </span>
       </div>
       <div className="notice">
         <span>
           <strong>Como funciona:</strong> cada estado recebe exclusivamente os assuntos retornados
           em sua própria consulta ao Google. O RSS apresenta apenas uma amostra das tendências
-          recentes. Nenhum resultado financeiro nesta amostra não significa ausência de
-          pesquisas financeiras na UF.
+          recentes. Nenhum resultado financeiro nesta amostra não significa ausência de pesquisas
+          financeiras na UF.
         </span>
       </div>
       <div className="filters">
@@ -126,12 +132,18 @@ export function StateRadar({
         </div>
       </div>
       <div className="kpis" aria-live="polite">
-        {([
-          ["UFs consultadas", feed.responded + "/27", "Consultas por código geográfico"],
-          ["UFs com tendências", feed.withFinance, "Resultado financeiro identificado no RSS"],
-          ["Termos capturados", feed.records.length, "Ocorrências efetivamente publicadas pelo Google"],
-          ["Nesta UF", list.length, "Sem completar dados ausentes"],
-        ] as [string, string | number, string][]).map(([label, value, description]) => (
+        {(
+          [
+            ["UFs consultadas", feed.responded + "/27", "Consultas por código geográfico"],
+            ["UFs com tendências", feed.withFinance, "Resultado financeiro identificado no RSS"],
+            [
+              "Termos capturados",
+              feed.records.length,
+              "Ocorrências efetivamente publicadas pelo Google",
+            ],
+            ["Nesta UF", list.length, "Sem completar dados ausentes"],
+          ] as [string, string | number, string][]
+        ).map(([label, value, description]) => (
           <div className="kpi" key={label}>
             <div className="kpi-label">{label}</div>
             <div className="kpi-value">{value}</div>
@@ -164,8 +176,8 @@ export function StateRadar({
           <div className="detail-eyebrow">BUSCAS IDENTIFICADAS · {selectedUF}</div>
           <h2>{UF_NAMES[selectedUF] ?? selectedUF}</h2>
           <div className="note">
-            Estes termos foram encontrados diretamente na consulta geográfica BR-{selectedUF},
-            e não herdados dos destaques nacionais.
+            Estes termos foram encontrados diretamente na consulta geográfica BR-{selectedUF}, e não
+            herdados dos destaques nacionais.
           </div>
           <div className="detail-section">TENDÊNCIAS FINANCEIRAS DO ESTADO</div>
           {coverage?.status === "falha_consulta" ? (
@@ -184,7 +196,12 @@ export function StateRadar({
                   >
                     <span>
                       <strong>{record.term}</strong>
-                      <small>Google Trends · {record.publishedAt ? fmtDateTime(record.publishedAt) : "Data não informada"}</small>
+                      <small>
+                        Google Trends ·{" "}
+                        {record.publishedAt
+                          ? fmtDateTime(record.publishedAt)
+                          : "Data não informada"}
+                      </small>
                       <small className="regional-context">Origem comprovada: {record.geo}</small>
                     </span>
                     <span className="heat-pill warm">Em destaque</span>
@@ -194,11 +211,13 @@ export function StateRadar({
             </div>
           ) : (
             <div className="empty">
-              Não foram identificadas tendências financeiras entre os resultados recentes do
-              Google Trends nesta UF. Isso não indica zero buscas ou ausência de interesse.
+              Não foram identificadas tendências financeiras entre os resultados recentes do Google
+              Trends nesta UF. Isso não indica zero buscas ou ausência de interesse.
             </div>
           )}
-          {loading && <div className="note">Verificando se existem novos resultados estaduais…</div>}
+          {loading && (
+            <div className="note">Verificando se existem novos resultados estaduais…</div>
+          )}
         </aside>
       </div>
     </>

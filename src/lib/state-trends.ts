@@ -15,9 +15,7 @@ export interface StateTrendRecord {
 }
 
 export type StateCoverageStatus =
-  | "com_termos_financeiros"
-  | "sem_tendencia_financeira"
-  | "falha_consulta";
+  "com_termos_financeiros" | "sem_tendencia_financeira" | "falha_consulta";
 export interface StateCoverage {
   uf: string;
   status: StateCoverageStatus;
@@ -70,8 +68,11 @@ export function parseStateFeed(payload: unknown, stateStatus: unknown): StateTre
     const c = raw as Record<string, unknown>;
     const uf = String(c["uf"] ?? "");
     const status = String(c["status"] ?? "") as StateCoverageStatus;
-    if (!UF_NAMES[uf] || covered.has(uf) ||
-      !["com_termos_financeiros", "sem_tendencia_financeira", "falha_consulta"].includes(status)) {
+    if (
+      !UF_NAMES[uf] ||
+      covered.has(uf) ||
+      !["com_termos_financeiros", "sem_tendencia_financeira", "falha_consulta"].includes(status)
+    ) {
       throw new Error("Cobertura por UF inconsistente");
     }
     covered.add(uf);
@@ -108,7 +109,9 @@ export function parseStateFeed(payload: unknown, stateStatus: unknown): StateTre
     }
     seen.add(key);
     records.push({
-      uf, term, geo,
+      uf,
+      term,
+      geo,
       source: "Google Trends Trending Now",
       publishedAt: dateOrNull(r["dataFonte"]),
       sourceURL: url,
@@ -130,9 +133,10 @@ export function parseStateFeed(payload: unknown, stateStatus: unknown): StateTre
 export function recordsForState(feed: StateTrendsFeed, uf: string): StateTrendRecord[] {
   return feed.records
     .filter((r) => r.uf === uf)
-    .sort((a, b) =>
-      (Date.parse(b.publishedAt ?? "") || 0) - (Date.parse(a.publishedAt ?? "") || 0) ||
-      a.term.localeCompare(b.term, "pt-BR"),
+    .sort(
+      (a, b) =>
+        (Date.parse(b.publishedAt ?? "") || 0) - (Date.parse(a.publishedAt ?? "") || 0) ||
+        a.term.localeCompare(b.term, "pt-BR"),
     );
 }
 
@@ -158,7 +162,10 @@ export async function fetchStateFeed(): Promise<StateTrendsFeed> {
       }
     };
     try {
-      const [feed, status] = await Promise.all([get("state-trends.json"), get("state-status.json")]);
+      const [feed, status] = await Promise.all([
+        get("state-trends.json"),
+        get("state-status.json"),
+      ]);
       return { ...parseStateFeed(feed, status), origin: origin.name };
     } catch (error) {
       failures.push(origin.name + ": " + String(error instanceof Error ? error.message : error));
