@@ -1,4 +1,5 @@
 name: Formatar novos componentes estaduais
+# Execução temporária de revisão visual e de qualidade.
 on:
   push:
     branches: [main]
