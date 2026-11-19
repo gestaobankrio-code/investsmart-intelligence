@@ -2,10 +2,22 @@
 // Sem credenciais, sem APIs Google no navegador: apenas leitura de dois JSON públicos.
 import { UF_NAMES } from "./intelligence";
 
-export const FEED_BASE = "https://gestaobankrio-code.github.io/investsmart-trends-feed/data";
+export const FEED_ORIGINS = [
+  {
+    name: "GitHub Pages",
+    base: "https://gestaobankrio-code.github.io/investsmart-trends-feed/data",
+  },
+  {
+    name: "GitHub Raw",
+    base: "https://raw.githubusercontent.com/gestaobankrio-code/investsmart-trends-feed/main/docs/data",
+  },
+] as const;
+
+export const FEED_BASE = FEED_ORIGINS[0].base;
 export const FEED_URLS = { trends: `${FEED_BASE}/trends.json`, status: `${FEED_BASE}/status.json` };
 export const POLL_MS = 30 * 60 * 1000;
 export const STALE_DAYS = 14;
+export const FEED_TIMEOUT_MS = 8_000;
 
 export interface TrendRecord {
   id: string;
@@ -47,6 +59,7 @@ export interface TrendsFeed {
   lastCheck: string | null;
   extraction: string | null;
   isStaticSample: boolean;
+  origin: string | null;
 }
 
 const idx = (v: unknown): number | null =>
@@ -100,28 +113,58 @@ export function parseFeed(trends: unknown, status: unknown): TrendsFeed {
     lastCheck: isoDate(s["ultimaVerificacao"]),
     extraction,
     isStaticSample: extraction !== "bigquery_live" && extraction !== "bigquery",
+    origin: null,
   };
 }
 
 /** Dados com mais de 14 dias (pela data da fonte mais recente, ou fim da semana). */
-export function isStale(feed: TrendsFeed, now = new Date()): boolean {
+export function feedAgeDays(feed: TrendsFeed, now = new Date()): number | null {
   const ref = feed.sourceDate ?? feed.weekEnd;
-  if (!ref) return true;
-  return now.getTime() - Date.parse(ref) > STALE_DAYS * 86400000;
+  if (!ref) return null;
+  const age = now.getTime() - Date.parse(ref);
+  return Number.isFinite(age) ? Math.max(0, Math.floor(age / 86400000)) : null;
+}
+
+export function isStale(feed: TrendsFeed, now = new Date()): boolean {
+  const ageDays = feedAgeDays(feed, now);
+  return ageDays == null || ageDays > STALE_DAYS;
 }
 
 export async function fetchFeed(): Promise<TrendsFeed> {
-  // The same fresh read identifier is used for both files, bypassing stale CDN/browser entries.
+  // Cada leitura usa o mesmo identificador nos dois arquivos para evitar mistura de versões.
   const revision = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const get = async (u: string) => {
-    const url = new URL(u);
-    url.searchParams.set("revalidate", revision);
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status} em ${u.split("/").pop()}`);
-    return res.json() as Promise<unknown>;
-  };
-  const [trends, status] = await Promise.all([get(FEED_URLS.trends), get(FEED_URLS.status)]);
-  return parseFeed(trends, status);
+  const failures: string[] = [];
+
+  for (const origin of FEED_ORIGINS) {
+    const get = async (file: "trends.json" | "status.json") => {
+      const url = new URL(`${origin.base}/${file}`);
+      url.searchParams.set("revalidate", revision);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), FEED_TIMEOUT_MS);
+
+      try {
+        const res = await fetch(url, {
+          cache: "no-store",
+          signal: controller.signal,
+          headers: { Accept: "application/json" },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status} em ${file}`);
+        return (await res.json()) as unknown;
+      } finally {
+        clearTimeout(timeout);
+      }
+    };
+
+    try {
+      const [trends, status] = await Promise.all([get("trends.json"), get("status.json")]);
+      return { ...parseFeed(trends, status), origin: origin.name };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      failures.push(`${origin.name}: ${message}`);
+    }
+  }
+
+  throw new Error(`Feed indisponível em todas as origens. ${failures.join(" | ")}`);
 }
 
 export const fmtPts = (n: number | null) =>
