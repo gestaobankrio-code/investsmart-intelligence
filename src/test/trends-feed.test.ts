@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchFeed, fmtPts, isStale, parseFeed, POLL_MS } from "@/lib/trends-feed";
+import { feedAgeDays, fetchFeed, fmtPts, isStale, parseFeed, POLL_MS } from "@/lib/trends-feed";
 
 const base = (registros: unknown[]) => ({ status: "ok", semanaInicio: "2026-10-25", semanaFim: "2026-10-31", origemExtracao: "fixture_csv", registros });
 const rec = (o: object) => ({ fonte: "Em ascensao", termo: "selic", uf: "SP", semana: "2026-10-25", dataFonte: "2026-10-30", indiceAnterior: 40, indiceAtual: 55, ...o });
@@ -21,6 +21,7 @@ describe("trends feed rules", () => {
   });
   it("data older than 14 days is stale", () => {
     const f = parseFeed(base([rec({})]), {});
+    expect(feedAgeDays(f, new Date("2026-11-13T00:00:00Z"))).toBe(14);
     expect(isStale(f, new Date("2026-11-13T00:00:00Z"))).toBe(false);
     expect(isStale(f, new Date("2026-11-14T00:00:01Z"))).toBe(true);
   });
@@ -65,9 +66,31 @@ describe("public feed revalidation", () => {
     expect(identifiers[2]).toBe(identifiers[3]);
     expect(identifiers[0]).not.toBe(identifiers[2]);
   });
+  it("falls back to the raw GitHub origin when GitHub Pages fails", async () => {
+    const urls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: URL | string) => {
+        const url = String(input);
+        urls.push(url);
+        if (url.includes("github.io")) return { ok: false, status: 503 };
+        return {
+          ok: true,
+          json: async () =>
+            url.includes("trends.json")
+              ? { ...base([rec({})]), origemExtracao: "bigquery_live" }
+              : {},
+        };
+      }),
+    );
+    const feed = await fetchFeed();
+    expect(feed.origin).toBe("GitHub Raw");
+    expect(urls.some((url) => url.includes("raw.githubusercontent.com"))).toBe(true);
+  });
+
   it("rejects failed reads instead of returning fictional records", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 503 })));
-    await expect(fetchFeed()).rejects.toThrow("HTTP 503");
+    await expect(fetchFeed()).rejects.toThrow("Feed indisponível em todas as origens");
   });
 });
 
