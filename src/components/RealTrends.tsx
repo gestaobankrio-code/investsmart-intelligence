@@ -63,7 +63,7 @@ function regionalCells(rows: TrendRecord[]): MapCell[] {
       count: entries.length,
       peak: rising,
       hot: rising > 0,
-      title: \`\${UF_NAMES[uf]} · \${entries.length} registros regionais de termos nacionais · \${rising} em alta\`,
+      title: `${UF_NAMES[uf]} · ${entries.length} registros regionais de termos nacionais · ${rising} em alta`,
     }];
   });
 }
