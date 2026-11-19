@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Termos financeiros nos destaques nacionais do Google Trends: índices relativos por UF e variações semanais em pontos, com cobertura parcial.",
+          "Termos reais do Top 25 e Top Rising do Google Trends Brasil, sem palavras-chave predefinidas, com índices regionais e cobertura parcial.",
       },
       { property: "og:title", content: "InvestSmart — Inteligência Regional Google Trends" },
       {
@@ -122,7 +122,7 @@ function App() {
       "Fontes de dados",
       "GOOGLE INTELLIGENCE",
       "SEM COMPLEXIDADE",
-      "Feed público de dados reais. Orçamento autorizado: R$ 0,00 — nenhum serviço pago ativado.",
+      "Feed de tendências reais do Google Trends, sem termos predefinidos. A execução do BigQuery pode gerar cobrança conforme a configuração do projeto.",
     ],
   };
   const title = titles[view];
@@ -187,7 +187,7 @@ function App() {
           <div className="side-foot">
             <strong>Inteligência regional</strong>
             <br />
-            Termos financeiros entre os destaques nacionais do Google Trends, com cobertura parcial
+            Termos obtidos diretamente dos destaques reais do Google Trends, sem lista predefinida e com cobertura parcial
             por UF.
           </div>
         </aside>
@@ -334,8 +334,8 @@ function Sources({ feed }: { feed: FeedState }) {
           <span className="method-ic">FD</span>
           <h3>Dados reais Google Trends</h3>
           <p>
-            Termos financeiros identificados entre os destaques nacionais <strong>Top 25</strong> e{" "}
-            <strong>Top Rising</strong>, com <strong>cobertura parcial por UF</strong>. Somente
+            Termos obtidos sem seleção prévia de palavras-chave entre <strong>Top 25</strong> e{" "}
+            <strong>Top Rising</strong>, com <strong>cobertura parcial por UF</strong>. Podem aparecer assuntos de qualquer tema, inclusive esportes. Somente
             índice de interesse relativo (0–100) e variação em <strong>pontos de índice</strong>{" "}
             entre semanas completas. Sem índice anterior: “Sem comparação”. UF ausente: “Sem dados”,
             não zero.
