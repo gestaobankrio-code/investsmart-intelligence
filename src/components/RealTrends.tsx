@@ -7,6 +7,8 @@ import {
   feedAgeDays,
   fmtDate,
   fmtDateTime,
+  heatOfDelta,
+  heatOfRegionalSummary,
   isStale,
   summarizeNationalTerms,
   type TrendRecord,
@@ -20,8 +22,19 @@ export interface FeedState {
   loading: boolean;
 }
 
-const trendLabel = (r: TrendRecord) =>
-  r.trend === "Sem comparação" ? "Histórico insuficiente" : r.trend;
+function HeatPill({ level }: { level: string }) {
+  const style =
+    level === "Quente"
+      ? "hot"
+      : level === "Frio"
+        ? "cold"
+        : level === "Morno"
+          ? "warm"
+          : "unknown";
+  return <span className={`heat-pill ${style}`}>{level}</span>;
+}
+
+const trendLabel = (r: TrendRecord) => heatOfDelta(r.deltaPts);
 
 export function RealNotice({ st }: { st: FeedState }) {
   const { feed, error, readAt } = st;
@@ -227,7 +240,7 @@ export function RealRadar({
                       {r.source} · fonte {fmtDate(r.sourceDate)}
                     </small>
                   </span>
-                  <em>{trendLabel(r)}</em>
+                  <HeatPill level={trendLabel(r)} />
                 </button>
               ))}
             </div>
@@ -255,6 +268,7 @@ export function RealRadar({
                 <th>Termo nacional</th>
                 <th>Fonte</th>
                 <th>UFs com dados</th>
+                <th>Temperatura da tendência</th>
                 <th>UFs em alta</th>
                 <th>Última data da fonte</th>
               </tr>
@@ -262,20 +276,23 @@ export function RealRadar({
             <tbody>
               {unique.map((s) => (
                 <tr key={s.term}>
-                  <td>
+                  <td data-label="Termo">
                     <button type="button" className="btn" onClick={() => setTerm(s.term)}>
                       {s.term}
                     </button>
                   </td>
-                  <td>{s.source}</td>
-                  <td>{s.ufs}</td>
-                  <td>{s.risingUFs}</td>
-                  <td>{fmtDate(s.latestDate)}</td>
+                  <td data-label="Fonte">{s.source}</td>
+                  <td data-label="UFs com dados">{s.ufs}</td>
+                  <td data-label="Temperatura">
+                    <HeatPill level={heatOfRegionalSummary(s)} />
+                  </td>
+                  <td data-label="UFs em alta">{s.risingUFs}</td>
+                  <td data-label="Data">{fmtDate(s.latestDate)}</td>
                 </tr>
               ))}
               {!unique.length && (
                 <tr>
-                  <td colSpan={5} className="empty">
+                  <td colSpan={6} className="empty">
                     Nenhum assunto para este filtro.
                   </td>
                 </tr>
@@ -351,13 +368,14 @@ export function RealRanking({ st, onPick }: { st: FeedState; onPick: (uf: string
                 <th>UFs com registros</th>
                 <th>UFs em alta</th>
                 <th>UFs em queda</th>
+                <th>Temperatura</th>
                 <th>Data da fonte</th>
               </tr>
             </thead>
             <tbody>
               {unique.map((s) => (
                 <tr key={s.term}>
-                  <td>
+                  <td data-label="Assunto">
                     <button
                       type="button"
                       className="btn"
@@ -369,16 +387,19 @@ export function RealRanking({ st, onPick }: { st: FeedState; onPick: (uf: string
                       {s.term}
                     </button>
                   </td>
-                  <td>{s.source}</td>
-                  <td>{s.ufs}</td>
-                  <td>{s.risingUFs}</td>
-                  <td>{s.fallingUFs}</td>
-                  <td>{fmtDate(s.latestDate)}</td>
+                  <td data-label="Fonte">{s.source}</td>
+                  <td data-label="UFs">{s.ufs}</td>
+                  <td data-label="Altas">{s.risingUFs}</td>
+                  <td data-label="Quedas">{s.fallingUFs}</td>
+                  <td data-label="Temperatura">
+                    <HeatPill level={heatOfRegionalSummary(s)} />
+                  </td>
+                  <td data-label="Data">{fmtDate(s.latestDate)}</td>
                 </tr>
               ))}
               {!unique.length && (
                 <tr>
-                  <td className="empty" colSpan={6}>
+                  <td className="empty" colSpan={7}>
                     Sem registros para este filtro.
                   </td>
                 </tr>
@@ -427,8 +448,8 @@ export function RealCompare({ st, onPick }: { st: FeedState; onPick: (uf: string
           <div>
             <div className="card-title">Evolução do termo por estado</div>
             <div className="card-sub">
-              Direção calculada a partir das duas semanas disponíveis na fonte, sem pontos
-              artificiais e sem classificação de popularidade entre UFs.
+              Quente indica alta, morno indica estabilidade e frio indica queda no interesse.
+              Não representa volume ou potencial de conversão.
             </div>
           </div>
         </div>
@@ -438,7 +459,7 @@ export function RealCompare({ st, onPick }: { st: FeedState; onPick: (uf: string
               <tr>
                 <th>Estado</th>
                 <th>Termo</th>
-                <th>Evolução</th>
+                <th>Temperatura da tendência</th>
                 <th>Data da fonte</th>
               </tr>
             </thead>
@@ -447,14 +468,16 @@ export function RealCompare({ st, onPick }: { st: FeedState; onPick: (uf: string
                 const r = byUF.get(state)!;
                 return (
                   <tr key={state}>
-                    <td>
+                    <td data-label="Estado">
                       <button className="btn" type="button" onClick={() => onPick(state)}>
                         {UF_NAMES[state]} · {state}
                       </button>
                     </td>
-                    <td>{term}</td>
-                    <td>{trendLabel(r)}</td>
-                    <td>{fmtDate(r.sourceDate)}</td>
+                    <td data-label="Termo">{term}</td>
+                    <td data-label="Temperatura">
+                      <HeatPill level={trendLabel(r)} />
+                    </td>
+                    <td data-label="Data">{fmtDate(r.sourceDate)}</td>
                   </tr>
                 );
               })}
