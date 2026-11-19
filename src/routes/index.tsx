@@ -354,9 +354,9 @@ function Sources({ feed }: { feed: FeedState }) {
     <>
       <div className="notice">
         <span>
-          <strong>Segurança:</strong> o navegador lê os feeds estaduais e nacionais publicados no GitHub
-          Pages, sem credenciais Google e sem consultas diretas ao BigQuery ou às APIs Google Ads e
-          Google Trends.
+          <strong>Segurança:</strong> o navegador lê os feeds estaduais e nacionais publicados no
+          GitHub Pages, sem credenciais Google e sem consultas diretas ao BigQuery ou às APIs Google
+          Ads e Google Trends.
         </span>
         <span className="flag">SOMENTE LEITURA</span>
       </div>
@@ -375,10 +375,10 @@ function Sources({ feed }: { feed: FeedState }) {
           <span className="method-ic">FD</span>
           <h3>Dados reais Google Trends</h3>
           <p>
-            Nos módulos nacionais, termos do BigQuery são classificados por pertinência
-            financeira. A temperatura indica direção do interesse: quente quando cresce, morno
-            quando estável e frio quando cai. Termos sem histórico ficam como “Sem comparação”. A
-            fonte possui cobertura parcial; o Radar usa outra fonte, o RSS específico por UF.
+            Nos módulos nacionais, termos do BigQuery são classificados por pertinência financeira.
+            A temperatura indica direção do interesse: quente quando cresce, morno quando estável e
+            frio quando cai. Termos sem histórico ficam como “Sem comparação”. A fonte possui
+            cobertura parcial; o Radar usa outra fonte, o RSS específico por UF.
           </p>
         </article>
         <article className="card method">
@@ -394,9 +394,10 @@ function Sources({ feed }: { feed: FeedState }) {
           <span className="method-ic">↻</span>
           <h3>Verificação do feed</h3>
           <p>
-            Releitura dos feeds públicos ao abrir a plataforma, a cada 30 minutos e pela verificação manual, sem novas
-            consultas ao BigQuery. Dados com mais de 3 dias são marcados como desatualizados. A
-            verificação do feed não confirma nova extração nem agendamento automático.
+            Releitura dos feeds públicos ao abrir a plataforma, a cada 30 minutos e pela verificação
+            manual, sem novas consultas ao BigQuery. Dados com mais de 3 dias são marcados como
+            desatualizados. A verificação do feed não confirma nova extração nem agendamento
+            automático.
           </p>
         </article>
         <article className="card method">
