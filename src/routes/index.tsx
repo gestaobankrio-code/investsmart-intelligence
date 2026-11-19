@@ -360,17 +360,17 @@ function Sources({ feed }: { feed: FeedState }) {
           <p>
             Termos extraídos dos destaques reais do Brasil e classificados por pertinência
             financeira. A temperatura indica direção do interesse: quente quando cresce, morno
-            quando estável e frio quando cai. Termos sem histórico ficam como “Sem comparação”.
-            A fonte oferece cobertura parcial por UF, não volumes absolutos de pesquisa.
+            quando estável e frio quando cai. Termos sem histórico ficam como “Sem comparação”. A
+            fonte oferece cobertura parcial por UF, não volumes absolutos de pesquisa.
           </p>
         </article>
         <article className="card method">
           <span className="method-ic">TR</span>
           <h3>Índices e comparabilidade</h3>
           <p>
-            Os rótulos de temperatura não são pontuação de oportunidade, intenção de compra
-            ou quantidade de pesquisas. Cada assunto é nacional e possui séries regionais,
-            que não devem ser interpretadas como termos independentes.
+            Os rótulos de temperatura não são pontuação de oportunidade, intenção de compra ou
+            quantidade de pesquisas. Cada assunto é nacional e possui séries regionais, que não
+            devem ser interpretadas como termos independentes.
           </p>
         </article>
         <article className="card method">

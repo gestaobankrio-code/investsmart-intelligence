@@ -44,9 +44,7 @@ describe("trends feed rules", () => {
     expect(heatOfDelta(null)).toBe("Sem comparação");
   });
   it("national temperature distinguishes predominant signs and mixed regions", () => {
-    expect(heatOfRegionalSummary({ risingUFs: 17, fallingUFs: 4, stableUFs: 3 })).toBe(
-      "Quente",
-    );
+    expect(heatOfRegionalSummary({ risingUFs: 17, fallingUFs: 4, stableUFs: 3 })).toBe("Quente");
     expect(heatOfRegionalSummary({ risingUFs: 2, fallingUFs: 19, stableUFs: 0 })).toBe("Frio");
     expect(heatOfRegionalSummary({ risingUFs: 0, fallingUFs: 0, stableUFs: 5 })).toBe("Morno");
     expect(heatOfRegionalSummary({ risingUFs: 3, fallingUFs: 3, stableUFs: 0 })).toBe("Misto");

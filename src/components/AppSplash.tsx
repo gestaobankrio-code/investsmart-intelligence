@@ -26,7 +26,9 @@ export function AppSplash() {
         <span className="splash-overline">INVESTSMART INTELLIGENCE</span>
         <h2>Inteligência de mercado.</h2>
         <p>Dados reais. Decisões fundamentadas.</p>
-        <div className="splash-track" aria-hidden="true"><span /></div>
+        <div className="splash-track" aria-hidden="true">
+          <span />
+        </div>
       </div>
       <button type="button" className="splash-skip" onClick={() => setVisible(false)}>
         Pular introdução
