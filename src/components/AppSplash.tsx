@@ -9,7 +9,7 @@ export function AppSplash() {
   const [visible, setVisible] = useState(true);
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const timeout = window.setTimeout(() => setVisible(false), reducedMotion ? 120 : 1350);
+    const timeout = window.setTimeout(() => setVisible(false), reducedMotion ? 120 : 3600);
     return () => window.clearTimeout(timeout);
   }, []);
 
