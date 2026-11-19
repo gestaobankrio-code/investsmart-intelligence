@@ -113,15 +113,10 @@ function median(numbers: number[]): number | null {
   if (!numbers.length) return null;
   const ordered = [...numbers].sort((a, b) => a - b);
   const mid = Math.floor(ordered.length / 2);
-  return ordered.length % 2
-    ? ordered[mid]
-    : (ordered[mid - 1] + ordered[mid]) / 2;
+  return ordered.length % 2 ? ordered[mid] : (ordered[mid - 1] + ordered[mid]) / 2;
 }
 
-export function regionalDifferentials(
-  records: TrendRecord[],
-  uf: string,
-): RegionalDifferential[] {
+export function regionalDifferentials(records: TrendRecord[], uf: string): RegionalDifferential[] {
   const weeklyByTerm = new Map<string, number[]>();
   for (const record of records) {
     if (record.deltaPts == null || !Number.isFinite(record.deltaPts) || !record.week) continue;
@@ -140,15 +135,19 @@ export function regionalDifferentials(
       if (reference == null || record.deltaPts == null) return [];
       const difference = record.deltaPts - reference;
       if (difference === 0) return [];
-      return [{
-        record,
-        direction: difference > 0 ? "Acima da mediana" as const : "Abaixo da mediana" as const,
-        difference,
-      }];
+      return [
+        {
+          record,
+          direction:
+            difference > 0 ? ("Acima da mediana" as const) : ("Abaixo da mediana" as const),
+          difference,
+        },
+      ];
     })
-    .sort((a, b) =>
-      Math.abs(b.difference) - Math.abs(a.difference) ||
-      a.record.term.localeCompare(b.record.term, "pt-BR"),
+    .sort(
+      (a, b) =>
+        Math.abs(b.difference) - Math.abs(a.difference) ||
+        a.record.term.localeCompare(b.record.term, "pt-BR"),
     );
 }
 

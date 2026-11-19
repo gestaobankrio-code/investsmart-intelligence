@@ -113,8 +113,7 @@ export function RealRadar({
     () =>
       regionalDifferentials(all, selectedUF).filter(
         (item) =>
-          (!term || item.record.term === term) &&
-          (!onlyUp || item.record.trend === "Em alta"),
+          (!term || item.record.term === term) && (!onlyUp || item.record.trend === "Em alta"),
       ),
     [all, selectedUF, term, onlyUp],
   );
@@ -252,7 +251,10 @@ export function RealRadar({
             )}
           </div>
           {visibleStateRecords.length ? (
-            <div className="term-options" key={`${selectedUF}-${showAllStateTerms ? "all" : "focus"}`}>
+            <div
+              className="term-options"
+              key={`${selectedUF}-${showAllStateTerms ? "all" : "focus"}`}
+            >
               {visibleStateRecords.map((r) => {
                 const differential = differentials.find((d) => d.record.id === r.id);
                 return (

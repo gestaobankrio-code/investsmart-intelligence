@@ -262,9 +262,7 @@ describe("V12.3 state grouping and trend", () => {
     expect(am.map((row) => row.record.term)).toEqual(["débito", "bitcoin hoje"]);
     expect(am[0]?.direction).toBe("Acima da mediana");
     expect(am[1]?.direction).toBe("Abaixo da mediana");
-    expect([...mg, ...ba, ...am].some((row) => row.record.term === "bolsa de valores")).toBe(
-      false,
-    );
+    expect([...mg, ...ba, ...am].some((row) => row.record.term === "bolsa de valores")).toBe(false);
   });
   it("does not invent a regional difference without enough comparable states", () => {
     const f = parseFeed(base([rec({ uf: "SP" }), rec({ uf: "RJ" })]), {});
