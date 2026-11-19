@@ -187,8 +187,8 @@ function App() {
           <div className="side-foot">
             <strong>Inteligência regional</strong>
             <br />
-            Termos obtidos diretamente dos destaques reais do Google Trends, sem lista predefinida e com cobertura parcial
-            por UF.
+            Termos obtidos diretamente dos destaques reais do Google Trends, sem lista predefinida e
+            com cobertura parcial por UF.
           </div>
         </aside>
         <main className="main" id="conteudo-principal" tabIndex={-1}>
@@ -335,10 +335,10 @@ function Sources({ feed }: { feed: FeedState }) {
           <h3>Dados reais Google Trends</h3>
           <p>
             Termos obtidos sem seleção prévia de palavras-chave entre <strong>Top 25</strong> e{" "}
-            <strong>Top Rising</strong>, com <strong>cobertura parcial por UF</strong>. Podem aparecer assuntos de qualquer tema, inclusive esportes. Somente
-            índice de interesse relativo (0–100) e variação em <strong>pontos de índice</strong>{" "}
-            entre semanas completas. Sem índice anterior: “Sem comparação”. UF ausente: “Sem dados”,
-            não zero.
+            <strong>Top Rising</strong>, com <strong>cobertura parcial por UF</strong>. Podem
+            aparecer assuntos de qualquer tema, inclusive esportes. Somente índice de interesse
+            relativo (0–100) e variação em <strong>pontos de índice</strong> entre semanas
+            completas. Sem índice anterior: “Sem comparação”. UF ausente: “Sem dados”, não zero.
           </p>
         </article>
         <article className="card method">
