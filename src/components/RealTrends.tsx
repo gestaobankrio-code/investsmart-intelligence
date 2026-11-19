@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BrazilMap, pinCount, type MapCell } from "./BrazilMap";
 import { REGION, UFS, UF_NAMES, norm } from "@/lib/intelligence";
-import { fmtDate, fmtDateTime, fmtIdx, fmtPts, groupByUF, isStale, type TrendRecord, type TrendsFeed } from "@/lib/trends-feed";
+import { feedAgeDays, fmtDate, fmtDateTime, fmtIdx, fmtPts, groupByUF, isStale, type TrendRecord, type TrendsFeed } from "@/lib/trends-feed";
 
 type RSort = "index" | "delta" | "alpha" | "date";
 const by = (k: RSort) => (a: TrendRecord, b: TrendRecord) => {
@@ -21,23 +21,37 @@ export function RealNotice({ st }: { st: FeedState }) {
   const { feed, error, readAt } = st;
   if (!feed) {
     return (
-      <div className="notice">
-        <span><strong>DADOS REAIS INDISPONÍVEIS</strong> · {st.loading ? "Lendo o feed público do Google Trends…" : `Não foi possível ler o feed público: ${error ?? "erro desconhecido"}. Nenhum dado foi exibido no lugar.`}</span>
+      <div className={"notice " + (st.loading ? "loading" : "error")} role={st.loading ? "status" : "alert"}>
+        <span>
+          <strong>{st.loading ? "VALIDANDO DADOS" : "DADOS REAIS INDISPONÍVEIS"}</strong>
+          {" · "}
+          {st.loading
+            ? "Lendo e validando o feed público antes de montar os indicadores."
+            : `Não foi possível ler nenhuma origem do feed: ${error ?? "erro desconhecido"}.`}
+        </span>
         <span className="flag">{st.loading ? "VERIFICANDO" : "FALHA NA LEITURA"}</span>
       </div>
     );
   }
+
   const stale = isStale(feed);
+  const age = feedAgeDays(feed);
+  const extraction = feed.generatedAt ? fmtDateTime(feed.generatedAt) : "não informada";
+
   return (
-    <div className={"notice" + (stale ? "" : " real")}>
+    <div className={"notice " + (stale ? "stale" : "real")} role={stale || error ? "alert" : "status"}>
       <span>
-        <strong>GOOGLE TRENDS — DADOS REAIS</strong> · Semana de referência {fmtDate(feed.weekStart)}–{fmtDate(feed.weekEnd)} · Data da fonte {fmtDate(feed.sourceDate)} · Última verificação do feed {fmtDateTime(feed.lastCheck)} · Lido nesta página {readAt ?? "—"}
-        {feed.extraction === "bigquery_live" && <> · Última extração validada em 05/11/2026. Agendamento automático em configuração.</>}
-        {<> · Termos financeiros entre os destaques nacionais · cobertura parcial por UF.</>}
-        {feed.isStaticSample && <> · <strong>AMOSTRA INICIAL ESTÁTICA</strong> (coleta automatizada ainda não validada)</>}
+        <strong>{stale ? "GOOGLE TRENDS · DADOS REAIS DESATUALIZADOS" : "GOOGLE TRENDS · DADOS REAIS ATUALIZADOS"}</strong>
+        {" · "}Semana {fmtDate(feed.weekStart)}–{fmtDate(feed.weekEnd)}
+        {" · "}Fonte {fmtDate(feed.sourceDate)}
+        {" · "}Extração {extraction}
+        {" · "}Idade {age == null ? "não calculada" : `${age} ${age === 1 ? "dia" : "dias"}`}
+        {" · "}Origem {feed.origin ?? "não identificada"}
+        {readAt && <> · Lido nesta página {readAt}</>}
+        {feed.isStaticSample && <> · <strong>AMOSTRA ESTÁTICA</strong></>}
         {error && <> · Última releitura falhou: {error}</>}
       </span>
-      <span className="flag">{stale ? "DADOS DESATUALIZADOS" : "ÍNDICE 0–100 · PONTOS"}</span>
+      <span className="flag">{stale ? "AÇÃO NECESSÁRIA" : "ÍNDICE 0–100 · PONTOS"}</span>
     </div>
   );
 }
@@ -60,7 +74,19 @@ function Table({ rows, sort, focus, onPick, minPts }: { rows: TrendRecord[]; sor
         <thead><tr><th>UF</th><th>Termo</th><th>Destaque nacional</th><th>Posição nacional</th><th>Índice atual</th><th>Índice anterior</th><th>Variação (pts)</th><th>Data da fonte</th></tr></thead>
         <tbody>
           {sorted.length ? sorted.map((r) => (
-            <tr key={r.id} className={focus?.id === r.id ? "selected-row" : ""} onClick={() => onPick(r)}>
+            <tr
+              key={r.id}
+              className={focus?.id === r.id ? "selected-row" : ""}
+              tabIndex={0}
+              aria-label={`Abrir ${r.term} em ${UF_NAMES[r.uf]}`}
+              onClick={() => onPick(r)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onPick(r);
+                }
+              }}
+            >
               <td><strong>{r.uf}</strong></td><td><strong>{r.term}</strong></td><td><span className="mini-pill">{r.source}</span></td><td>{r.rankTop25 != null ? `${r.rankTop25}º` : "Não informada"}</td>
               <td><strong>{fmtIdx(r.indexNow)}</strong></td><td>{fmtIdx(r.indexPrev)}</td>
               <td><span className={"growth" + ((r.deltaPts ?? -Infinity) >= minPts ? " hot" : "")}>{fmtPts(r.deltaPts)}</span></td>
@@ -221,11 +247,11 @@ export function RealCompare({ st, onPick }: { st: FeedState; onPick: (uf: string
     if (!list.length) return <div className="empty">Sem dados para este termo.</div>;
     const top = Math.max(1, ...list.map((r) => Math.abs(r[key] ?? 0)));
     return list.map((r) => (
-      <div key={r.id} className="bar-row" style={{ cursor: "pointer" }} onClick={() => onPick(r.uf)}>
+      <button key={r.id} type="button" className="bar-row" onClick={() => onPick(r.uf)} aria-label={`Abrir ${UF_NAMES[r.uf]} no Radar Brasil`}>
         <span className="bar-name">{r.uf} · {UF_NAMES[r.uf]}</span>
-        <div className="bar-track"><div className="bar-fill" style={{ width: r[key] == null ? 0 : `${Math.max(2, Math.min(100, (Math.max(0, r[key] ?? 0) / top) * 100))}%` }} /></div>
-        <div className="bar-num">{fmt(r[key])}</div>
-      </div>
+        <span className="bar-track"><span className="bar-fill" style={{ width: r[key] == null ? 0 : `${Math.max(2, Math.min(100, (Math.max(0, r[key] ?? 0) / top) * 100))}%` }} /></span>
+        <span className="bar-num">{fmt(r[key])}</span>
+      </button>
     ));
   };
   return (
