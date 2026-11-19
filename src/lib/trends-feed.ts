@@ -98,6 +98,7 @@ export interface TrendsFeed {
   lastCheck: string | null;
   extraction: string | null;
   discovery: string | null;
+  classification: string | null;
   isStaticSample: boolean;
   origin: string | null;
 }
@@ -175,6 +176,7 @@ export function parseFeed(trends: unknown, status: unknown): TrendsFeed {
     lastCheck: isoDate(s["ultimaVerificacao"]),
     extraction,
     discovery: typeof t["descoberta"] === "string" ? t["descoberta"] : null,
+    classification: typeof t["classificacao"] === "string" ? t["classificacao"] : null,
     isStaticSample: extraction !== "bigquery_live" && extraction !== "bigquery",
     origin: null,
   };
@@ -226,8 +228,11 @@ export async function fetchFeed(): Promise<TrendsFeed> {
           "Origem de dados não verificada. A interface aceita apenas extração real do BigQuery.",
         );
       }
-      if (parsed.discovery !== "sem_termos_predefinidos") {
-        throw new Error("Feed rejeitado: contém seleção prévia de termos ou método não verificado");
+      if (
+        parsed.discovery !== "termos_reais_com_classificacao_financeira" ||
+        parsed.classification !== "regras_de_dominio_v1"
+      ) {
+        throw new Error("Feed rejeitado: classificação financeira ou procedência não verificadas");
       }
       if (!parsed.records.length) throw new Error("Feed real sem registros válidos");
       return { ...parsed, origin: origin.name };
