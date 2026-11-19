@@ -1,0 +1,32 @@
+name: Formatar atualização do painel
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/format-finance-ui.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: true
+      - uses: oven-sh/setup-bun@v2
+      - name: Instalar dependências
+        run: bun install --frozen-lockfile
+      - name: Formatar arquivos alterados
+        run: bunx prettier --write src/components/RealTrends.tsx src/lib/trends-feed.ts src/test/trends-feed.test.ts
+      - name: Publicar somente formatação
+        run: |
+          if git diff --quiet -- src/components/RealTrends.tsx src/lib/trends-feed.ts src/test/trends-feed.test.ts; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/RealTrends.tsx src/lib/trends-feed.ts src/test/trends-feed.test.ts
+          git commit -m "style: padronizar formatação de painel com tópicos nacionais"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
