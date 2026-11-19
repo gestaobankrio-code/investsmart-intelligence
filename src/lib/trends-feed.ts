@@ -184,7 +184,9 @@ export async function fetchFeed(): Promise<TrendsFeed> {
       const [trends, status] = await Promise.all([get("trends.json"), get("status.json")]);
       const parsed = parseFeed(trends, status);
       if (parsed.isStaticSample || parsed.extraction !== "bigquery_live") {
-        throw new Error("Origem de dados não verificada. A interface aceita apenas extração real do BigQuery.");
+        throw new Error(
+          "Origem de dados não verificada. A interface aceita apenas extração real do BigQuery.",
+        );
       }
       if (!parsed.records.length) throw new Error("Feed real sem registros válidos");
       return { ...parsed, origin: origin.name };
