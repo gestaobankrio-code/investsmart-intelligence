@@ -26,7 +26,7 @@ const fixture = () => ({
   origemExtracao: "google_trends_rss_regional",
   escopoTermos: "descoberta_estadual_por_geo",
   geradoEm: "2026-11-19T21:01:00Z",
-  cobertura,
+  cobertura: coverage,
   totalRegistros: records.length,
   registros: records,
 });
