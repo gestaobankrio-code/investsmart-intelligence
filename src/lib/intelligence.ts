@@ -23,12 +23,33 @@ export type SourceStatus = {
 };
 
 export const UF_NAMES: Record<string, string> = {
-  AC: "Acre", AL: "Alagoas", AP: "Amapá", AM: "Amazonas", BA: "Bahia", CE: "Ceará",
-  DF: "Distrito Federal", ES: "Espírito Santo", GO: "Goiás", MA: "Maranhão", MT: "Mato Grosso",
-  MS: "Mato Grosso do Sul", MG: "Minas Gerais", PA: "Pará", PB: "Paraíba", PR: "Paraná",
-  PE: "Pernambuco", PI: "Piauí", RJ: "Rio de Janeiro", RN: "Rio Grande do Norte",
-  RS: "Rio Grande do Sul", RO: "Rondônia", RR: "Roraima", SC: "Santa Catarina",
-  SP: "São Paulo", SE: "Sergipe", TO: "Tocantins",
+  AC: "Acre",
+  AL: "Alagoas",
+  AP: "Amapá",
+  AM: "Amazonas",
+  BA: "Bahia",
+  CE: "Ceará",
+  DF: "Distrito Federal",
+  ES: "Espírito Santo",
+  GO: "Goiás",
+  MA: "Maranhão",
+  MT: "Mato Grosso",
+  MS: "Mato Grosso do Sul",
+  MG: "Minas Gerais",
+  PA: "Pará",
+  PB: "Paraíba",
+  PR: "Paraná",
+  PE: "Pernambuco",
+  PI: "Piauí",
+  RJ: "Rio de Janeiro",
+  RN: "Rio Grande do Norte",
+  RS: "Rio Grande do Sul",
+  RO: "Rondônia",
+  RR: "Roraima",
+  SC: "Santa Catarina",
+  SP: "São Paulo",
+  SE: "Sergipe",
+  TO: "Tocantins",
 };
 
 export const UFS = Object.keys(UF_NAMES).sort((a, b) =>
@@ -36,18 +57,51 @@ export const UFS = Object.keys(UF_NAMES).sort((a, b) =>
 );
 
 export const REGION: Record<string, string> = {
-  AC: "Norte", AM: "Norte", AP: "Norte", PA: "Norte", RO: "Norte", RR: "Norte", TO: "Norte",
-  AL: "Nordeste", BA: "Nordeste", CE: "Nordeste", MA: "Nordeste", PB: "Nordeste", PE: "Nordeste",
-  PI: "Nordeste", RN: "Nordeste", SE: "Nordeste", DF: "Centro-Oeste", GO: "Centro-Oeste",
-  MT: "Centro-Oeste", MS: "Centro-Oeste", ES: "Sudeste", MG: "Sudeste", RJ: "Sudeste",
-  SP: "Sudeste", PR: "Sul", RS: "Sul", SC: "Sul",
+  AC: "Norte",
+  AM: "Norte",
+  AP: "Norte",
+  PA: "Norte",
+  RO: "Norte",
+  RR: "Norte",
+  TO: "Norte",
+  AL: "Nordeste",
+  BA: "Nordeste",
+  CE: "Nordeste",
+  MA: "Nordeste",
+  PB: "Nordeste",
+  PE: "Nordeste",
+  PI: "Nordeste",
+  RN: "Nordeste",
+  SE: "Nordeste",
+  DF: "Centro-Oeste",
+  GO: "Centro-Oeste",
+  MT: "Centro-Oeste",
+  MS: "Centro-Oeste",
+  ES: "Sudeste",
+  MG: "Sudeste",
+  RJ: "Sudeste",
+  SP: "Sudeste",
+  PR: "Sul",
+  RS: "Sul",
+  SC: "Sul",
 };
 
 export const REGION_BASE: Record<string, string> = {
-  Norte: "#C8ACFA", Nordeste: "#A477F5", "Centro-Oeste": "#7B42D1", Sudeste: "#1E1238", Sul: "#4E2582",
+  Norte: "#C8ACFA",
+  Nordeste: "#A477F5",
+  "Centro-Oeste": "#7B42D1",
+  Sudeste: "#1E1238",
+  Sul: "#4E2582",
 };
 
-export const CATEGORIES = ["Renda Fixa", "Fundos e Bolsa", "Agro", "Cripto", "Educação", "Assessoria"];
+export const CATEGORIES = [
+  "Renda Fixa",
+  "Fundos e Bolsa",
+  "Agro",
+  "Cripto",
+  "Educação",
+  "Assessoria",
+];
 
 const TOPICS = [
   { category: "Renda Fixa", term: "quanto rende CDB", vol: 6400, cpc: 2.94 },
@@ -79,7 +133,8 @@ function demoSignals(): Signal[] {
         category: t.category,
         growthPct: Math.round(26 + ((n * 13) % 238)),
         trendIndex: Math.max(20, Math.min(99, 46 + ((n * 7) % 52))),
-        avgMonthlySearches: Math.round((t.vol * (0.38 + ((i * 17) % 49) / 100) + j * 167) / 100) * 100,
+        avgMonthlySearches:
+          Math.round((t.vol * (0.38 + ((i * 17) % 49) / 100) + j * 167) / 100) * 100,
         avgCpc: Number((t.cpc * (0.76 + (i % 8) * 0.07)).toFixed(2)),
         competition: ["Baixa", "Média", "Alta"][(i + j) % 3]!,
         periodDays: 30,
@@ -135,11 +190,17 @@ export function normalizeAPIRow(s: unknown): Signal | null {
 export const fmtNum = (n: number | null | undefined) =>
   n == null ? "—" : new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 }).format(n);
 export const fmtMoney = (n: number | null | undefined) =>
-  n == null ? "Indisponível" : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
+  n == null
+    ? "Indisponível"
+    : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
 export const fmtGrowth = (n: number | null | undefined) =>
   n == null ? "—" : `${n >= 0 ? "+" : ""}${fmtNum(n)}%`;
 export const norm = (s: string) =>
-  String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  String(s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 
 export type SortKey = "growth" | "volume" | "cpc";
 export const sortField = (k: SortKey): keyof Signal =>

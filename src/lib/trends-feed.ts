@@ -45,7 +45,10 @@ export const trendOf = (deltaPts: number | null, given?: unknown): Trend => {
   return deltaPts > 0 ? "Em alta" : deltaPts < 0 ? "Em queda" : "Estável";
 };
 /** Agrupa registros por UF (todas as 27, vazias incluídas, nunca preenchidas com zero). */
-export function groupByUF(records: TrendRecord[], ufs: string[]): { uf: string; records: TrendRecord[] }[] {
+export function groupByUF(
+  records: TrendRecord[],
+  ufs: string[],
+): { uf: string; records: TrendRecord[] }[] {
   return ufs.map((uf) => ({ uf, records: records.filter((r) => r.uf === uf) }));
 }
 
@@ -63,8 +66,11 @@ export interface TrendsFeed {
 }
 
 const idx = (v: unknown): number | null =>
-  v === null || v === undefined || v === "" || !Number.isFinite(Number(v)) ? null
-    : Number(v) >= 0 && Number(v) <= 100 ? Number(v) : null;
+  v === null || v === undefined || v === "" || !Number.isFinite(Number(v))
+    ? null
+    : Number(v) >= 0 && Number(v) <= 100
+      ? Number(v)
+      : null;
 const isoDate = (v: unknown): string | null =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v) && !Number.isNaN(Date.parse(v)) ? v : null;
 
@@ -90,14 +96,21 @@ export function parseFeed(trends: unknown, status: unknown): TrendsFeed {
     const prev = idx(r["indiceAnterior"]);
     const deltaPts = now != null && prev != null ? now - prev : null;
     records.push({
-      id, uf, term,
-      source: String(r["fonte"] ?? "").replace("ascensao", "ascensão").slice(0, 40) || "—",
+      id,
+      uf,
+      term,
+      source:
+        String(r["fonte"] ?? "")
+          .replace("ascensao", "ascensão")
+          .slice(0, 40) || "—",
       week: isoDate(r["semana"]) ?? "",
       sourceDate: isoDate(r["dataFonte"]),
       indexNow: now,
       indexPrev: prev,
       deltaPts,
-      rankTop25: Number.isInteger(r["rankNacionalTop25"]) ? (r["rankNacionalTop25"] as number) : null,
+      rankTop25: Number.isInteger(r["rankNacionalTop25"])
+        ? (r["rankNacionalTop25"] as number)
+        : null,
       trend: trendOf(deltaPts, r["tendencia"]),
     });
   }
@@ -171,6 +184,14 @@ export const fmtPts = (n: number | null) =>
   n == null ? "Sem comparação" : `${n > 0 ? "+" : ""}${n} pts`;
 export const fmtIdx = (n: number | null) => (n == null ? "Sem dados" : `${n}/100`);
 export const fmtDate = (iso: string | null) =>
-  iso ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "UTC" }).format(new Date(iso)) : "—";
+  iso
+    ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "UTC" }).format(
+        new Date(iso),
+      )
+    : "—";
 export const fmtDateTime = (iso: string | null) =>
-  iso ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(iso)) : "—";
+  iso
+    ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(
+        new Date(iso),
+      )
+    : "—";

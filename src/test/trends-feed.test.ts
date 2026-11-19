@@ -1,8 +1,23 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { feedAgeDays, fetchFeed, fmtPts, isStale, parseFeed, POLL_MS } from "@/lib/trends-feed";
 
-const base = (registros: unknown[]) => ({ status: "ok", semanaInicio: "2026-10-25", semanaFim: "2026-10-31", origemExtracao: "fixture_csv", registros });
-const rec = (o: object) => ({ fonte: "Em ascensao", termo: "selic", uf: "SP", semana: "2026-10-25", dataFonte: "2026-10-30", indiceAnterior: 40, indiceAtual: 55, ...o });
+const base = (registros: unknown[]) => ({
+  status: "ok",
+  semanaInicio: "2026-10-25",
+  semanaFim: "2026-10-31",
+  origemExtracao: "fixture_csv",
+  registros,
+});
+const rec = (o: object) => ({
+  fonte: "Em ascensao",
+  termo: "selic",
+  uf: "SP",
+  semana: "2026-10-25",
+  dataFonte: "2026-10-30",
+  indiceAnterior: 40,
+  indiceAtual: 55,
+  ...o,
+});
 
 describe("trends feed rules", () => {
   it("variation is in index points, not percent", () => {
@@ -29,15 +44,23 @@ describe("trends feed rules", () => {
     expect(parseFeed(base([rec({})]), {}).isStaticSample).toBe(true);
   });
   it("bigquery_live is real even if status.json says fixture", () => {
-    const feed = parseFeed({ ...base([rec({})]), origemExtracao: "bigquery_live" }, { origemExtracao: "fixture_csv" });
+    const feed = parseFeed(
+      { ...base([rec({})]), origemExtracao: "bigquery_live" },
+      { origemExtracao: "fixture_csv" },
+    );
     expect(feed.isStaticSample).toBe(false);
     expect(feed.extraction).toBe("bigquery_live");
   });
   it("status.json cannot relabel a static trends extraction as live", () => {
-    expect(parseFeed(base([rec({})]), { origemExtracao: "bigquery_live" }).isStaticSample).toBe(true);
+    expect(parseFeed(base([rec({})]), { origemExtracao: "bigquery_live" }).isStaticSample).toBe(
+      true,
+    );
   });
   it("preserves the reference week and original source date", () => {
-    const feed = parseFeed({ ...base([rec({})]), origemExtracao: "bigquery_live" }, { ultimaVerificacao: "2026-11-05T20:20:39.600Z" });
+    const feed = parseFeed(
+      { ...base([rec({})]), origemExtracao: "bigquery_live" },
+      { ultimaVerificacao: "2026-11-05T20:20:39.600Z" },
+    );
     expect(feed.weekStart).toBe("2026-10-25");
     expect(feed.weekEnd).toBe("2026-10-31");
     expect(feed.sourceDate).toBe("2026-10-30");
@@ -53,11 +76,22 @@ describe("public feed revalidation", () => {
   it("uses no-store and a new shared identifier for each two-file read", async () => {
     const urls: URL[] = [];
     const options: RequestInit[] = [];
-    vi.stubGlobal("fetch", vi.fn(async (url: URL, init: RequestInit) => {
-      urls.push(url); options.push(init);
-      return { ok: true, json: async () => url.pathname.endsWith("trends.json") ? { ...base([rec({})]), origemExtracao: "bigquery_live" } : {} };
-    }));
-    await fetchFeed(); await fetchFeed();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: URL, init: RequestInit) => {
+        urls.push(url);
+        options.push(init);
+        return {
+          ok: true,
+          json: async () =>
+            url.pathname.endsWith("trends.json")
+              ? { ...base([rec({})]), origemExtracao: "bigquery_live" }
+              : {},
+        };
+      }),
+    );
+    await fetchFeed();
+    await fetchFeed();
     expect(urls).toHaveLength(4);
     expect(options.every((option) => option.cache === "no-store")).toBe(true);
     const identifiers = urls.map((url) => url.searchParams.get("revalidate"));
@@ -89,14 +123,20 @@ describe("public feed revalidation", () => {
   });
 
   it("rejects failed reads instead of returning fictional records", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 503 })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: false, status: 503 })),
+    );
     await expect(fetchFeed()).rejects.toThrow("Feed indisponível em todas as origens");
   });
 });
 
 describe("V12.3 state grouping and trend", () => {
   it("trend comes from points; null previous is 'Sem comparação'", () => {
-    const f = parseFeed(base([rec({}), rec({ uf: "RJ", indiceAnterior: null }), rec({ uf: "MG", indiceAtual: 40 })]), {});
+    const f = parseFeed(
+      base([rec({}), rec({ uf: "RJ", indiceAnterior: null }), rec({ uf: "MG", indiceAtual: 40 })]),
+      {},
+    );
     expect(f.records.map((r) => r.trend)).toEqual(["Em alta", "Sem comparação", "Estável"]);
   });
   it("groups all requested UFs, leaving empty ones empty (no zero records)", async () => {

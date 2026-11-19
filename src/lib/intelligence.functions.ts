@@ -58,7 +58,8 @@ export const refreshSources = createServerFn({ method: "POST" })
     return {
       periodDays: [7, 30, 90].includes(p) ? p : 30,
       uf: typeof d["uf"] === "string" && /^[A-Z]{2}$/.test(d["uf"]) ? d["uf"] : null,
-      category: typeof d["category"] === "string" && d["category"].length < 60 ? d["category"] : null,
+      category:
+        typeof d["category"] === "string" && d["category"].length < 60 ? d["category"] : null,
     };
   })
   .handler(async ({ data }) => {

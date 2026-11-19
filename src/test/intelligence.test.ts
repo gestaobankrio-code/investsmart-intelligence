@@ -14,7 +14,13 @@ describe("intelligence rules", () => {
   });
   it("rejects invalid backend rows and out-of-range metrics", () => {
     expect(normalizeAPIRow({ uf: "XX", term: "a", category: "b", periodDays: 30 })).toBeNull();
-    const r = normalizeAPIRow({ uf: "sp", term: "CDB", category: "Renda Fixa", periodDays: 30, trendIndex: 150 });
+    const r = normalizeAPIRow({
+      uf: "sp",
+      term: "CDB",
+      category: "Renda Fixa",
+      periodDays: 30,
+      trendIndex: 150,
+    });
     expect(r?.uf).toBe("SP");
     expect(r?.trendIndex).toBeNull();
   });
