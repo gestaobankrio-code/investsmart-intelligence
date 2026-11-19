@@ -8,6 +8,7 @@ import {
   isStale,
   parseFeed,
   POLL_MS,
+  regionalDifferentials,
   summarizeNationalTerms,
 } from "@/lib/trends-feed";
 
@@ -236,6 +237,39 @@ describe("V12.3 state grouping and trend", () => {
     expect(selic?.ufs).toBe(2);
     expect(selic?.risingUFs).toBe(1);
     expect(selic?.fallingUFs).toBe(1);
+  });
+
+  it("highlights different movements for MG, BA and AM from regional records only", () => {
+    const feed = parseFeed(
+      base([
+        rec({ uf: "MG", termo: "bitcoin hoje", indiceAnterior: 17, indiceAtual: 22 }),
+        rec({ uf: "BA", termo: "bitcoin hoje", indiceAnterior: 16, indiceAtual: 19 }),
+        rec({ uf: "AM", termo: "bitcoin hoje", indiceAnterior: 9, indiceAtual: 9 }),
+        rec({ uf: "MG", termo: "débito", indiceAnterior: 47, indiceAtual: 60 }),
+        rec({ uf: "BA", termo: "débito", indiceAnterior: 61, indiceAtual: 75 }),
+        rec({ uf: "AM", termo: "débito", indiceAnterior: 40, indiceAtual: 61 }),
+        rec({ uf: "MG", termo: "bolsa de valores", indiceAnterior: 3, indiceAtual: 100 }),
+        rec({ uf: "BA", termo: "bolsa de valores", indiceAnterior: 3, indiceAtual: 100 }),
+        rec({ uf: "AM", termo: "bolsa de valores", indiceAnterior: 3, indiceAtual: 100 }),
+      ]),
+      {},
+    );
+    const mg = regionalDifferentials(feed.records, "MG");
+    const ba = regionalDifferentials(feed.records, "BA");
+    const am = regionalDifferentials(feed.records, "AM");
+    expect(mg.map((row) => row.record.term)).toEqual(["bitcoin hoje", "débito"]);
+    expect(ba.map((row) => row.record.term)).toEqual(["bitcoin hoje"]);
+    expect(am.map((row) => row.record.term)).toEqual(["débito", "bitcoin hoje"]);
+    expect(am[0]?.direction).toBe("Acima da mediana");
+    expect(am[1]?.direction).toBe("Abaixo da mediana");
+    expect([...mg, ...ba, ...am].some((row) => row.record.term === "bolsa de valores")).toBe(
+      false,
+    );
+  });
+  it("does not invent a regional difference without enough comparable states", () => {
+    const f = parseFeed(base([rec({ uf: "SP" }), rec({ uf: "RJ" })]), {});
+    expect(regionalDifferentials(f.records, "SP")).toEqual([]);
+    expect(regionalDifferentials(f.records, "AC")).toEqual([]);
   });
 
   it("terms come only from the feed, never from a fixed list", () => {
