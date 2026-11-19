@@ -2,12 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Compass, ListFilter, MapPinned, Database } from "lucide-react";
 import { AppSplash } from "@/components/AppSplash";
+import { StateRadar } from "@/components/StateRadar";
 import logo from "@/assets/investsmart-logo.png.asset.json";
 import { Button } from "@/components/ui/button";
 import {
   RealCompare,
   RealNotice,
-  RealRadar,
   RealRanking,
   type FeedState,
 } from "@/components/RealTrends";
@@ -37,7 +37,7 @@ export const Route = createFileRoute("/")({
 
 type View = "radar" | "ranking" | "compare" | "sources";
 const NAV: [View, string][] = [
-  ["radar", "Radar Brasil"],
+  ["radar", "Tendências por UF"],
   ["ranking", "Termos financeiros"],
   ["compare", "Comparar Estados"],
   ["sources", "Fontes e Metodologia"],
@@ -55,6 +55,7 @@ function App() {
   const [uf, setUf] = useState("");
   const [focusUF, setFocusUF] = useState("SP");
   const [toast, setToast] = useState<string | null>(null);
+  const [stateRefreshVersion, setStateRefreshVersion] = useState(0);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const inFlight = useRef(false);
   const [feedSt, setFeedSt] = useState<FeedState>({
@@ -111,21 +112,21 @@ function App() {
   const titles: Record<View, [string, string, string, string]> = {
     radar: [
       "InvestSmart · Inteligência geográfica",
-      "INTELIGÊNCIA",
-      "FINANCEIRA",
-      "Termos reais do Brasil e a temperatura de sua evolução nos estados.",
+      "TENDÊNCIAS",
+      "POR ESTADO",
+      "Assuntos financeiros descobertos diretamente no Google Trends de cada UF.",
     ],
     ranking: [
       "Assuntos do mercado financeiro",
       "TERMOS",
       "EM DESTAQUE",
-      "Cada termo aparece uma vez; as UFs mostram a evolução regional sem duplicar buscas.",
+      "Destaques nacionais do BigQuery, mantidos separados das buscas descobertas por estado.",
     ],
     compare: [
       "Inteligência comparativa",
       "COMPARAR",
       "ESTADOS",
-      "Selecione um assunto e identifique onde o interesse está quente, morno ou frio.",
+      "Compare a evolução regional dos assuntos nacionais, sem tratá-los como buscas exclusivas da UF.",
     ],
     sources: [
       "Fontes de dados",
@@ -166,7 +167,7 @@ function App() {
         <div className="top-meta">
           <span className={"env " + health}>
             <i className="dot" aria-hidden="true" />
-            {healthLabel}
+            {view === "radar" ? "RSS GOOGLE TRENDS · CONSULTA POR UF" : healthLabel}
           </span>
           <div className="user-badge" aria-hidden="true">
             IS
@@ -197,8 +198,8 @@ function App() {
           <div className="side-foot">
             <strong>Inteligência regional</strong>
             <br />
-            Termos reais com relevância financeira; cada assunto aparece uma vez e os estados
-            mostram sua evolução.
+            Tendências por UF consultadas diretamente no RSS estadual. O BigQuery nacional
+            permanece em um módulo separado.
           </div>
         </aside>
         <main className="main" id="conteudo-principal" tabIndex={-1}>
@@ -212,18 +213,30 @@ function App() {
                 <p className="subtitle">{title[3]}</p>
               </div>
               <div className="head-tools">
-                <VerifyBtn st={feedSt} onClick={() => void loadFeed(true)} />
+                <VerifyBtn
+                  st={view === "radar" ? { ...feedSt, loading: false, error: null } : feedSt}
+                  onClick={() => {
+                    if (view === "radar") {
+                      setStateRefreshVersion((value) => value + 1);
+                      showToast("Reconsultando o feed estadual publicado, sem inventar novos termos.");
+                    } else {
+                      void loadFeed(true);
+                    }
+                  }}
+                />
               </div>
             </div>
-            <RealNotice st={feedSt} />
-            {!feedSt.feed && <FeedEmptyState st={feedSt} onRetry={() => void loadFeed(true)} />}
-            {view === "radar" && feedSt.feed && (
-              <RealRadar
-                st={feedSt}
+            {view !== "radar" && <RealNotice st={feedSt} />}
+            {view !== "radar" && !feedSt.feed && (
+              <FeedEmptyState st={feedSt} onRetry={() => void loadFeed(true)} />
+            )}
+            {view === "radar" && (
+              <StateRadar
                 uf={uf}
                 setUf={setUf}
                 focusUF={focusUF}
                 setFocusUF={setFocusUF}
+                refreshVersion={stateRefreshVersion}
               />
             )}
             {view === "ranking" && feedSt.feed && <RealRanking st={feedSt} onPick={pick} />}
@@ -232,7 +245,7 @@ function App() {
           </section>
           <footer className="footer">
             <span>INVESTSMART · INTELIGÊNCIA DE BUSCAS</span>
-            <span>Google Trends · tendências reais · Quente / Morno / Frio</span>
+            <span>Google Trends · tendências estaduais reais · sem preenchimento artificial</span>
           </footer>
         </main>
       </div>
