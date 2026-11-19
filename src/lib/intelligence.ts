@@ -1,5 +1,5 @@
 // Domínio da Central de Inteligência de Buscas.
-// DADOS DE EXEMPLO: os sinais "demo" NÃO representam dados reais do Google.
+// Domínio de dados de mercado: sem indicadores fictícios ou geradores de demonstração.
 
 export type Competition = "Baixa" | "Média" | "Alta" | "Indisponível" | string;
 
@@ -14,7 +14,7 @@ export interface Signal {
   avgMonthlySearches: number | null;
   avgCpc: number | null;
   competition: Competition;
-  source: "demo" | "api";
+  source: "api";
 }
 
 export type SourceStatus = {
@@ -102,60 +102,6 @@ export const CATEGORIES = [
   "Educação",
   "Assessoria",
 ];
-
-const TOPICS = [
-  { category: "Renda Fixa", term: "quanto rende CDB", vol: 6400, cpc: 2.94 },
-  { category: "Renda Fixa", term: "Tesouro Selic", vol: 9200, cpc: 2.18 },
-  { category: "Renda Fixa", term: "Tesouro IPCA", vol: 5000, cpc: 2.78 },
-  { category: "Fundos e Bolsa", term: "fundos imobiliários", vol: 4700, cpc: 3.32 },
-  { category: "Fundos e Bolsa", term: "dividendos", vol: 5200, cpc: 3.86 },
-  { category: "Agro", term: "FIAGRO rentabilidade", vol: 2200, cpc: 4.28 },
-  { category: "Agro", term: "CRA investimentos", vol: 1700, cpc: 3.74 },
-  { category: "Cripto", term: "comprar bitcoin", vol: 7800, cpc: 4.59 },
-  { category: "Educação", term: "como começar a investir", vol: 8900, cpc: 2.15 },
-  { category: "Assessoria", term: "assessoria de investimentos", vol: 6100, cpc: 6.34 },
-  { category: "Renda Fixa", term: "LCI LCA", vol: 3600, cpc: 2.82 },
-  { category: "Educação", term: "investir com 100 reais", vol: 3200, cpc: 1.96 },
-];
-
-/** Dados demonstrativos determinísticos (sem aleatoriedade). */
-function demoSignals(): Signal[] {
-  const out: Signal[] = [];
-  UFS.forEach((uf, i) => {
-    const picks = [i % TOPICS.length, (i + 4) % TOPICS.length, (i + 8) % TOPICS.length, 0, 9];
-    [...new Set(picks)].forEach((idx, j) => {
-      const t = TOPICS[idx]!;
-      const n = i * 47 + j * 31 + 13;
-      out.push({
-        id: `demo-${uf}-${idx}`,
-        uf,
-        term: t.term,
-        category: t.category,
-        growthPct: Math.round(26 + ((n * 13) % 238)),
-        trendIndex: Math.max(20, Math.min(99, 46 + ((n * 7) % 52))),
-        avgMonthlySearches:
-          Math.round((t.vol * (0.38 + ((i * 17) % 49) / 100) + j * 167) / 100) * 100,
-        avgCpc: Number((t.cpc * (0.76 + (i % 8) * 0.07)).toFixed(2)),
-        competition: ["Baixa", "Média", "Alta"][(i + j) % 3]!,
-        periodDays: 30,
-        source: "demo",
-      });
-    });
-  });
-  return out;
-}
-
-export const BASE_DEMO = demoSignals();
-
-export function demoForPeriod(period: number): Signal[] {
-  const mul = period === 7 ? 1.28 : period === 90 ? 0.67 : 1;
-  return BASE_DEMO.map((s) => ({
-    ...s,
-    id: `${s.id}-${period}`,
-    growthPct: s.growthPct == null ? null : Math.round(s.growthPct * mul),
-    periodDays: period,
-  }));
-}
 
 /** Valida e normaliza uma linha recebida do backend; descarta valores fora de faixa. */
 export function normalizeAPIRow(s: unknown): Signal | null {
