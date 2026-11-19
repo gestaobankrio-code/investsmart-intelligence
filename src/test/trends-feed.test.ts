@@ -258,7 +258,7 @@ describe("V12.3 state grouping and trend", () => {
     const ba = regionalDifferentials(feed.records, "BA");
     const am = regionalDifferentials(feed.records, "AM");
     expect(mg.map((row) => row.record.term)).toEqual(["bitcoin hoje", "débito"]);
-    expect(ba.map((row) => row.record.term)).toEqual(["bitcoin hoje"]);
+    expect(ba).toEqual([]); // Com três UFs, BA coincide com a mediana nesse exemplo.
     expect(am.map((row) => row.record.term)).toEqual(["débito", "bitcoin hoje"]);
     expect(am[0]?.direction).toBe("Acima da mediana");
     expect(am[1]?.direction).toBe("Abaixo da mediana");
