@@ -61,6 +61,7 @@ export interface TrendsFeed {
   generatedAt: string | null;
   lastCheck: string | null;
   extraction: string | null;
+  discovery: string | null;
   isStaticSample: boolean;
   origin: string | null;
 }
@@ -137,6 +138,7 @@ export function parseFeed(trends: unknown, status: unknown): TrendsFeed {
     generatedAt: isoDate(t["geradoEm"]),
     lastCheck: isoDate(s["ultimaVerificacao"]),
     extraction,
+    discovery: typeof t["descoberta"] === "string" ? t["descoberta"] : null,
     isStaticSample: extraction !== "bigquery_live" && extraction !== "bigquery",
     origin: null,
   };
@@ -187,6 +189,9 @@ export async function fetchFeed(): Promise<TrendsFeed> {
         throw new Error(
           "Origem de dados não verificada. A interface aceita apenas extração real do BigQuery.",
         );
+      }
+      if (parsed.discovery !== "sem_termos_predefinidos") {
+        throw new Error("Feed rejeitado: contém seleção prévia de termos ou método não verificado");
       }
       if (!parsed.records.length) throw new Error("Feed real sem registros válidos");
       return { ...parsed, origin: origin.name };
