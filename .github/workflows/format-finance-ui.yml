@@ -4,6 +4,10 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/format-finance-ui.yml"
+      - "src/components/AppSplash.tsx"
+      - "src/components/RealTrends.tsx"
+      - "src/lib/trends-feed.ts"
+      - "src/routes/index.tsx"
   workflow_dispatch:
 permissions:
   contents: write
@@ -19,7 +23,7 @@ jobs:
       - name: Instalar dependências
         run: bun install --frozen-lockfile
       - name: Formatar arquivos alterados
-        run: bunx prettier --write src/components/RealTrends.tsx src/lib/trends-feed.ts src/test/trends-feed.test.ts
+        run: bunx prettier --write src/components/AppSplash.tsx src/components/RealTrends.tsx src/lib/trends-feed.ts src/routes/index.tsx src/test/trends-feed.test.ts
       - name: Publicar somente formatação
         run: |
           if git diff --quiet -- src/components/RealTrends.tsx src/lib/trends-feed.ts src/test/trends-feed.test.ts; then exit 0; fi
