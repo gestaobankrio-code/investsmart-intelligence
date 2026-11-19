@@ -709,9 +709,7 @@ function StateGroups({
     <article className="card state-card">
       <div className="card-head">
         <div>
-          <div className="card-title">
-            Termos reais identificados no Google Trends · por estado
-          </div>
+          <div className="card-title">Termos reais identificados no Google Trends · por estado</div>
           <div className="card-sub">
             Índice 0–100 e variação em pontos entre semanas completas. Índices de termos diferentes
             são séries independentes.
