@@ -1,12 +1,21 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { feedAgeDays, fetchFeed, fmtPts, isStale, parseFeed, POLL_MS } from "@/lib/trends-feed";
+import {
+  feedAgeDays,
+  fetchFeed,
+  fmtPts,
+  isStale,
+  parseFeed,
+  POLL_MS,
+  summarizeNationalTerms,
+} from "@/lib/trends-feed";
 
 const base = (registros: unknown[]) => ({
   status: "ok",
   semanaInicio: "2026-10-25",
   semanaFim: "2026-10-31",
   origemExtracao: "fixture_csv",
-  descoberta: "sem_termos_predefinidos",
+  descoberta: "termos_reais_com_classificacao_financeira",
+  classificacao: "regras_de_dominio_v1",
   registros,
 });
 const rec = (o: object) => ({
@@ -149,7 +158,7 @@ describe("public feed revalidation", () => {
             ? {
                 ...base([rec({})]),
                 origemExtracao: "bigquery_live",
-                descoberta: "dinamica_taxonomia_financeira",
+                descoberta: "sem_termos_predefinidos",
               }
             : {},
       })),
@@ -195,6 +204,23 @@ describe("V12.3 state grouping and trend", () => {
     expect(g[0]?.records.map((r) => r.term)).toEqual(["selic", "ibovespa"]);
     expect(g[1]?.records).toEqual([]);
   });
+  it("groups a repeated national term into one unique topic", () => {
+    const f = parseFeed(
+      base([
+        rec({ uf: "SP", termo: "selic", indiceAnterior: 30, indiceAtual: 55 }),
+        rec({ uf: "RJ", termo: "selic", indiceAnterior: 80, indiceAtual: 20 }),
+        rec({ uf: "MG", termo: "ibovespa" }),
+      ]),
+      {},
+    );
+    const summaries = summarizeNationalTerms(f.records);
+    expect(summaries).toHaveLength(2);
+    const selic = summaries.find((s) => s.term === "selic");
+    expect(selic?.ufs).toBe(2);
+    expect(selic?.risingUFs).toBe(1);
+    expect(selic?.fallingUFs).toBe(1);
+  });
+
   it("terms come only from the feed, never from a fixed list", () => {
     const f = parseFeed(base([rec({ termo: "termo qualquer" })]), {});
     expect(f.terms).toEqual(["termo qualquer"]);
