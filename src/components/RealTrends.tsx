@@ -10,6 +10,7 @@ import {
   heatOfDelta,
   heatOfRegionalSummary,
   isStale,
+  regionalDifferentials,
   summarizeNationalTerms,
   type TrendRecord,
   type TrendsFeed,
@@ -97,6 +98,7 @@ export function RealRadar({
 }) {
   const [term, setTerm] = useState("");
   const [onlyUp, setOnlyUp] = useState(false);
+  const [showAllStateTerms, setShowAllStateTerms] = useState(false);
   const all = useMemo(() => st.feed?.records ?? [], [st.feed?.records]);
   const rows = useMemo(
     () => all.filter((r) => (!term || r.term === term) && (!onlyUp || r.trend === "Em alta")),
@@ -107,11 +109,21 @@ export function RealRadar({
   const stateRecords = rows
     .filter((r) => r.uf === selectedUF)
     .sort((a, b) => a.term.localeCompare(b.term, "pt-BR"));
+  const differentials = useMemo(
+    () => regionalDifferentials(rows, selectedUF),
+    [rows, selectedUF],
+  );
+  const highlighted = differentials.slice(0, 5);
+  const visibleStateRecords = showAllStateTerms
+    ? stateRecords
+    : highlighted.map((item) => item.record);
   const cells = useMemo(() => regionalCells(rows), [rows]);
   const statesWithRise = new Set(rows.filter((r) => r.trend === "Em alta").map((r) => r.uf)).size;
   const selectState = (next: string) => {
     setUf(next);
     setFocusUF(next);
+    setShowAllStateTerms(false);
+    setTerm("");
   };
   return (
     <>
@@ -163,6 +175,7 @@ export function RealRadar({
             onClick={() => {
               setTerm("");
               setOnlyUp(false);
+              setShowAllStateTerms(false);
               setUf("");
             }}
           >
@@ -215,32 +228,58 @@ export function RealRadar({
           <div className="detail-eyebrow">SÉRIES REGIONAIS · {selectedUF}</div>
           <h2>{UF_NAMES[selectedUF] ?? "Selecione um estado"}</h2>
           <div className="note">
-            Os termos abaixo são destaques nacionais acompanhados nesta UF, não uma lista de
-            pesquisas exclusivas do estado.
+            {showAllStateTerms
+              ? "Lista completa dos termos nacionais acompanhados nesta UF, não buscas exclusivas do estado."
+              : "Movimentos cuja variação difere da mediana das UFs para o mesmo termo e semana. Não são buscas exclusivas deste estado."}
           </div>
-          <div className="detail-section">EVOLUÇÃO NA UF</div>
-          {stateRecords.length ? (
-            <div className="term-options">
-              {stateRecords.map((r) => (
-                <button
-                  key={r.id}
-                  type="button"
-                  className={"term-option" + (r.term === term ? " active" : "")}
-                  onClick={() => setTerm(r.term === term ? "" : r.term)}
-                >
-                  <span>
-                    <strong>{r.term}</strong>
-                    <small>
-                      {r.source} · fonte {fmtDate(r.sourceDate)}
-                    </small>
-                  </span>
-                  <HeatPill level={trendLabel(r)} />
-                </button>
-              ))}
+          <div className="regional-detail-head">
+            <div className="detail-section">
+              {showAllStateTerms ? "TODOS OS TERMOS NA UF" : "DESTAQUES QUE DIFERENCIAM ESTA UF"}
+            </div>
+            {stateRecords.length > 0 && (
+              <button
+                className="regional-toggle"
+                type="button"
+                aria-pressed={showAllStateTerms}
+                onClick={() => setShowAllStateTerms((current) => !current)}
+              >
+                {showAllStateTerms ? "Ver destaques" : `Ver todos (${stateRecords.length})`}
+              </button>
+            )}
+          </div>
+          {visibleStateRecords.length ? (
+            <div className="term-options" key={`${selectedUF}-${showAllStateTerms ? "all" : "focus"}`}>
+              {visibleStateRecords.map((r) => {
+                const differential = differentials.find((d) => d.record.id === r.id);
+                return (
+                  <div className="regional-term" key={r.id}>
+                    <button
+                      type="button"
+                      className={"term-option" + (r.term === term ? " active" : "")}
+                      onClick={() => setTerm(r.term === term ? "" : r.term)}
+                    >
+                      <span>
+                        <strong>{r.term}</strong>
+                        <small>
+                          {r.source} · fonte {fmtDate(r.sourceDate)}
+                        </small>
+                        {differential && (
+                          <small className="regional-context">
+                            {differential.direction} das UFs na mesma semana
+                          </small>
+                        )}
+                      </span>
+                      <HeatPill level={trendLabel(r)} />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="empty">
-              Nenhum registro para esta UF e estes filtros. Ausência não significa zero buscas.
+              {stateRecords.length
+                ? "Não há variações distintas da mediana nesta UF e neste recorte. Veja todos os termos para consultar os registros disponíveis."
+                : "Nenhum registro para esta UF e estes filtros. Ausência não significa zero buscas."}
             </div>
           )}
         </aside>
