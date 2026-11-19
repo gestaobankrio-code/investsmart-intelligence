@@ -2000,3 +2000,42 @@ header.top {
   }
   .mobile-tab { transition: none; }
 }
+
+/* Diferenciais por UF: o painel não repete as mesmas palavras nacionais como destaques. */
+.regional-detail-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 14px 0 10px;
+}
+.regional-detail-head .detail-section {
+  margin: 0;
+  line-height: 1.45;
+}
+.regional-toggle {
+  min-height: 36px;
+  padding: 6px 10px;
+  background: #f7f2ff;
+  border: 1px solid #e0cffb;
+  border-radius: 9px;
+  color: #5d2b99;
+  font-weight: 700;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.regional-toggle:hover { background: #efe6ff; border-color: #bb98ef; }
+.regional-toggle:focus-visible { outline: 3px solid #9966ff70; }
+.regional-term { min-width: 0; }
+.term-option { min-height: 57px; }
+.term-option .regional-context {
+  color: #59437b;
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 5px;
+}
+@media (max-width: 480px) {
+  .regional-detail-head { align-items: flex-start; }
+  .regional-toggle { flex-shrink: 0; }
+  .term-options { max-height: min(53vh, 345px); }
+}
