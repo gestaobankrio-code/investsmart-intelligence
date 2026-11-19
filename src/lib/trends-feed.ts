@@ -66,7 +66,12 @@ export function summarizeNationalTerms(rows: TrendRecord[]): NationalTermSummary
       fallingUFs: records.filter((r) => r.trend === "Em queda").length,
       stableUFs: records.filter((r) => r.trend === "Estável").length,
       unknownUFs: records.filter((r) => r.trend === "Sem comparação").length,
-      latestDate: records.map((r) => r.sourceDate).filter((v): v is string => Boolean(v)).sort().at(-1) ?? null,
+      latestDate:
+        records
+          .map((r) => r.sourceDate)
+          .filter((v): v is string => Boolean(v))
+          .sort()
+          .at(-1) ?? null,
       records,
     }))
     .sort((a, b) => b.risingUFs - a.risingUFs || a.term.localeCompare(b.term, "pt-BR"));

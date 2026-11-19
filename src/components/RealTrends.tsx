@@ -30,13 +30,18 @@ export function RealNotice({ st }: { st: FeedState }) {
       <div className={"notice " + (st.loading ? "loading" : "error")} role="status">
         <strong>{st.loading ? "VALIDANDO DADOS REAIS" : "DADOS INDISPONÍVEIS"}</strong>
         {" · "}
-        {st.loading ? "Consultando o feed público." : error ?? "Não foi possível carregar a fonte."}
+        {st.loading
+          ? "Consultando o feed público."
+          : (error ?? "Não foi possível carregar a fonte.")}
       </div>
     );
   }
   const stale = isStale(feed);
   return (
-    <div className={"notice " + (stale ? "stale" : "real")} role={stale || error ? "alert" : "status"}>
+    <div
+      className={"notice " + (stale ? "stale" : "real")}
+      role={stale || error ? "alert" : "status"}
+    >
       <span>
         <strong>
           {stale ? "DADOS REAIS · FONTE DESATUALIZADA" : "DADOS REAIS · FONTE ATUALIZADA"}
@@ -58,13 +63,15 @@ function regionalCells(rows: TrendRecord[]): MapCell[] {
     const entries = rows.filter((r) => r.uf === uf);
     if (!entries.length) return [];
     const rising = entries.filter((r) => r.trend === "Em alta").length;
-    return [{
-      uf,
-      count: entries.length,
-      peak: rising,
-      hot: rising > 0,
-      title: `${UF_NAMES[uf]} · ${entries.length} registros regionais de termos nacionais · ${rising} em alta`,
-    }];
+    return [
+      {
+        uf,
+        count: entries.length,
+        peak: rising,
+        hot: rising > 0,
+        title: `${UF_NAMES[uf]} · ${entries.length} registros regionais de termos nacionais · ${rising} em alta`,
+      },
+    ];
   });
 }
 
@@ -90,7 +97,9 @@ export function RealRadar({
   );
   const unique = summarizeNationalTerms(rows);
   const selectedUF = uf || focusUF;
-  const stateRecords = rows.filter((r) => r.uf === selectedUF).sort((a, b) => a.term.localeCompare(b.term, "pt-BR"));
+  const stateRecords = rows
+    .filter((r) => r.uf === selectedUF)
+    .sort((a, b) => a.term.localeCompare(b.term, "pt-BR"));
   const cells = useMemo(() => regionalCells(rows), [rows]);
   const statesWithRise = new Set(rows.filter((r) => r.trend === "Em alta").map((r) => r.uf)).size;
   const selectState = (next: string) => {
@@ -126,16 +135,29 @@ export function RealRadar({
         </div>
         <div className="filter">
           <label htmlFor="radar-term">Assunto de interesse</label>
-          <select className="field" id="radar-term" value={term} onChange={(e) => setTerm(e.target.value)}>
+          <select
+            className="field"
+            id="radar-term"
+            value={term}
+            onChange={(e) => setTerm(e.target.value)}
+          >
             <option value="">Todos os assuntos encontrados</option>
-            {st.feed?.terms.map((t) => <option key={t} value={t}>{t}</option>)}
+            {st.feed?.terms.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
           </select>
         </div>
         <div className="filter-actions">
           <button
             className="btn"
             type="button"
-            onClick={() => { setTerm(""); setOnlyUp(false); setUf(""); }}
+            onClick={() => {
+              setTerm("");
+              setOnlyUp(false);
+              setUf("");
+            }}
           >
             Limpar filtros
           </button>
@@ -146,12 +168,14 @@ export function RealRadar({
         </div>
       </div>
       <div className="kpis" aria-live="polite">
-        {([
-          ["Assuntos nacionais", unique.length, "Cada termo contabilizado uma única vez"],
-          ["UFs com registros", cells.length, "Séries regionais disponíveis"],
-          ["UFs com alguma alta", statesWithRise, "Evolução positiva no período"],
-          ["Data da fonte", fmtDate(st.feed?.sourceDate ?? null), "Não é volume de pesquisas"],
-        ] as [string, string | number, string][]).map(([name, value, note]) => (
+        {(
+          [
+            ["Assuntos nacionais", unique.length, "Cada termo contabilizado uma única vez"],
+            ["UFs com registros", cells.length, "Séries regionais disponíveis"],
+            ["UFs com alguma alta", statesWithRise, "Evolução positiva no período"],
+            ["Data da fonte", fmtDate(st.feed?.sourceDate ?? null), "Não é volume de pesquisas"],
+          ] as [string, string | number, string][]
+        ).map(([name, value, note]) => (
           <div className="kpi" key={name}>
             <div className="kpi-label">{name}</div>
             <div className="kpi-value">{value}</div>
@@ -199,7 +223,9 @@ export function RealRadar({
                 >
                   <span>
                     <strong>{r.term}</strong>
-                    <small>{r.source} · fonte {fmtDate(r.sourceDate)}</small>
+                    <small>
+                      {r.source} · fonte {fmtDate(r.sourceDate)}
+                    </small>
                   </span>
                   <em>{trendLabel(r)}</em>
                 </button>
@@ -217,8 +243,8 @@ export function RealRadar({
           <div>
             <div className="card-title">Assuntos identificados no Brasil</div>
             <div className="card-sub">
-              Cada termo aparece uma única vez. A contagem de UFs descreve cobertura regional
-              do termo, não sua popularidade ou volume de buscas.
+              Cada termo aparece uma única vez. A contagem de UFs descreve cobertura regional do
+              termo, não sua popularidade ou volume de buscas.
             </div>
           </div>
         </div>
@@ -248,7 +274,11 @@ export function RealRadar({
                 </tr>
               ))}
               {!unique.length && (
-                <tr><td colSpan={5} className="empty">Nenhum assunto para este filtro.</td></tr>
+                <tr>
+                  <td colSpan={5} className="empty">
+                    Nenhum assunto para este filtro.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -270,7 +300,8 @@ export function RealRanking({ st, onPick }: { st: FeedState; onPick: (uf: string
       <div className="notice">
         <span>
           <strong>Lista de termos nacionais, sem repetições.</strong> Os sinais por estado são
-          mostrados apenas como evolução regional do mesmo assunto. Mais UFs não significa mais buscas.
+          mostrados apenas como evolução regional do mesmo assunto. Mais UFs não significa mais
+          buscas.
         </span>
       </div>
       <div className="filters">
@@ -286,10 +317,17 @@ export function RealRanking({ st, onPick }: { st: FeedState; onPick: (uf: string
         </div>
         <div className="filter">
           <label htmlFor="search-uf">Filtrar região</label>
-          <select className="field" id="search-uf" value={uf} onChange={(e) => setUf(e.target.value)}>
+          <select
+            className="field"
+            id="search-uf"
+            value={uf}
+            onChange={(e) => setUf(e.target.value)}
+          >
             <option value="">Brasil inteiro</option>
             {UFS.map((state) => (
-              <option key={state} value={state}>{state} · {UF_NAMES[state]}</option>
+              <option key={state} value={state}>
+                {state} · {UF_NAMES[state]}
+              </option>
             ))}
           </select>
         </div>
@@ -323,7 +361,10 @@ export function RealRanking({ st, onPick }: { st: FeedState; onPick: (uf: string
                     <button
                       type="button"
                       className="btn"
-                      onClick={() => { const first = s.records[0]; if (first) onPick(first.uf); }}
+                      onClick={() => {
+                        const first = s.records[0];
+                        if (first) onPick(first.uf);
+                      }}
                     >
                       {s.term}
                     </button>
@@ -335,7 +376,13 @@ export function RealRanking({ st, onPick }: { st: FeedState; onPick: (uf: string
                   <td>{fmtDate(s.latestDate)}</td>
                 </tr>
               ))}
-              {!unique.length && <tr><td className="empty" colSpan={6}>Sem registros para este filtro.</td></tr>}
+              {!unique.length && (
+                <tr>
+                  <td className="empty" colSpan={6}>
+                    Sem registros para este filtro.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -367,7 +414,11 @@ export function RealCompare({ st, onPick }: { st: FeedState; onPick: (uf: string
           value={term}
           onChange={(e) => setSelection(e.target.value)}
         >
-          {terms.map((t) => <option key={t} value={t}>{t}</option>)}
+          {terms.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
         </select>
         <span className="tag">{byUF.size} UFs COM REGISTROS</span>
       </div>
@@ -383,7 +434,14 @@ export function RealCompare({ st, onPick }: { st: FeedState; onPick: (uf: string
         </div>
         <div className="table-container">
           <table>
-            <thead><tr><th>Estado</th><th>Termo</th><th>Evolução</th><th>Data da fonte</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Estado</th>
+                <th>Termo</th>
+                <th>Evolução</th>
+                <th>Data da fonte</th>
+              </tr>
+            </thead>
             <tbody>
               {UFS.filter((state) => byUF.has(state)).map((state) => {
                 const r = byUF.get(state)!;
@@ -400,7 +458,13 @@ export function RealCompare({ st, onPick }: { st: FeedState; onPick: (uf: string
                   </tr>
                 );
               })}
-              {!byUF.size && <tr><td colSpan={4} className="empty">Sem dados regionais.</td></tr>}
+              {!byUF.size && (
+                <tr>
+                  <td colSpan={4} className="empty">
+                    Sem dados regionais.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -408,8 +472,8 @@ export function RealCompare({ st, onPick }: { st: FeedState; onPick: (uf: string
       {notCovered.length > 0 && (
         <div className="notice" style={{ marginTop: 12 }}>
           <span>
-            <strong>Sem dados regionais para este termo:</strong> {notCovered.join(", ")}.
-            Ausência de registro não equivale a zero pesquisas.
+            <strong>Sem dados regionais para este termo:</strong> {notCovered.join(", ")}. Ausência
+            de registro não equivale a zero pesquisas.
           </span>
         </div>
       )}
