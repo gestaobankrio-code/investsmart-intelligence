@@ -128,6 +128,30 @@ describe("public feed revalidation", () => {
     expect(urls.some((url) => url.includes("raw.githubusercontent.com"))).toBe(true);
   });
 
+  it("never renders fixture or unverified data returned by the feed", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: URL) => ({
+        ok: true,
+        json: async () => url.pathname.endsWith("trends.json") ? base([rec({})]) : {},
+      })),
+    );
+    await expect(fetchFeed()).rejects.toThrow("Feed indisponível em todas as origens");
+  });
+  it("rejects an unverified feed without valid regional records", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: URL) => ({
+        ok: true,
+        json: async () =>
+          url.pathname.endsWith("trends.json")
+            ? { ...base([]), origemExtracao: "bigquery_live" }
+            : {},
+      })),
+    );
+    await expect(fetchFeed()).rejects.toThrow("sem registros válidos");
+  });
+
   it("rejects failed reads instead of returning fictional records", async () => {
     vi.stubGlobal(
       "fetch",
