@@ -133,7 +133,7 @@ describe("public feed revalidation", () => {
       "fetch",
       vi.fn(async (url: URL) => ({
         ok: true,
-        json: async () => url.pathname.endsWith("trends.json") ? base([rec({})]) : {},
+        json: async () => (url.pathname.endsWith("trends.json") ? base([rec({})]) : {}),
       })),
     );
     await expect(fetchFeed()).rejects.toThrow("Feed indisponível em todas as origens");
