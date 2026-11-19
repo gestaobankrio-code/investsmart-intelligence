@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Compass, ListFilter, MapPinned, Database } from "lucide-react";
+import { AppSplash } from "@/components/AppSplash";
 import logo from "@/assets/investsmart-logo.png.asset.json";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,13 +20,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Termos reais do Top 25 e Top Rising do Google Trends Brasil, sem palavras-chave predefinidas, com índices regionais e cobertura parcial.",
+          "Assuntos financeiros reais encontrados no Google Trends Brasil, classificados por evolução e apresentados por região.",
       },
       { property: "og:title", content: "InvestSmart — Inteligência Regional Google Trends" },
       {
         property: "og:description",
         content:
-          "Dados reais Google Trends: índices 0–100 e variações em pontos por estado, com cobertura parcial.",
+          "Tendências do mercado financeiro com sinais quentes, mornos e frios, de acordo com a evolução real nas UFs.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -36,9 +38,16 @@ export const Route = createFileRoute("/")({
 type View = "radar" | "ranking" | "compare" | "sources";
 const NAV: [View, string][] = [
   ["radar", "Radar Brasil"],
-  ["ranking", "Ranking por UF"],
+  ["ranking", "Termos financeiros"],
   ["compare", "Comparar Estados"],
   ["sources", "Fontes e Metodologia"],
+];
+
+const MOBILE_NAV = [
+  { value: "radar" as View, label: "Radar", Icon: Compass },
+  { value: "ranking" as View, label: "Termos", Icon: ListFilter },
+  { value: "compare" as View, label: "Estados", Icon: MapPinned },
+  { value: "sources" as View, label: "Fontes", Icon: Database },
 ];
 
 function App() {
@@ -102,27 +111,27 @@ function App() {
   const titles: Record<View, [string, string, string, string]> = {
     radar: [
       "InvestSmart · Inteligência geográfica",
-      "ONDE A DEMANDA",
-      "ESTÁ CRESCENDO",
-      "Índice de interesse relativo (0–100) e variação semanal em pontos por UF — Google Trends.",
+      "INTELIGÊNCIA",
+      "FINANCEIRA",
+      "Termos reais do Brasil e a temperatura de sua evolução nos estados.",
     ],
     ranking: [
-      "Inteligência por UF",
-      "RANKING DE",
-      "BUSCAS REGIONAIS",
-      "Ranking de termos por estado pelo índice de interesse relativo do Google Trends (0–100).",
+      "Assuntos do mercado financeiro",
+      "TERMOS",
+      "EM DESTAQUE",
+      "Cada termo aparece uma vez; as UFs mostram a evolução regional sem duplicar buscas.",
     ],
     compare: [
       "Inteligência comparativa",
       "COMPARAR",
       "ESTADOS",
-      "Selecione um termo e compare o índice de interesse relativo e a variação semanal em pontos entre UFs.",
+      "Selecione um assunto e identifique onde o interesse está quente, morno ou frio.",
     ],
     sources: [
       "Fontes de dados",
       "GOOGLE INTELLIGENCE",
       "SEM COMPLEXIDADE",
-      "Feed de tendências reais do Google Trends, sem termos predefinidos. A execução do BigQuery pode gerar cobrança conforme a configuração do projeto.",
+      "Dados reais com relevância financeira validada. Sem volume estimado, sem dados simulados.",
     ],
   };
   const title = titles[view];
@@ -144,6 +153,7 @@ function App() {
 
   return (
     <>
+      <AppSplash />
       <a className="skip-link" href="#conteudo-principal">
         Pular para o conteúdo
       </a>
@@ -187,8 +197,8 @@ function App() {
           <div className="side-foot">
             <strong>Inteligência regional</strong>
             <br />
-            Termos obtidos diretamente dos destaques reais do Google Trends, sem lista predefinida e
-            com cobertura parcial por UF.
+            Termos reais com relevância financeira; cada assunto aparece uma vez e os estados
+            mostram sua evolução.
           </div>
         </aside>
         <main className="main" id="conteudo-principal" tabIndex={-1}>
@@ -222,10 +232,24 @@ function App() {
           </section>
           <footer className="footer">
             <span>INVESTSMART · INTELIGÊNCIA DE BUSCAS</span>
-            <span>Google Trends · índice relativo 0–100 · cobertura parcial</span>
+            <span>Google Trends · tendências reais · Quente / Morno / Frio</span>
           </footer>
         </main>
       </div>
+      <nav className="mobile-tabbar" aria-label="Navegação principal do aplicativo">
+        {MOBILE_NAV.map(({ value, label, Icon }) => (
+          <button
+            key={value}
+            className={"mobile-tab" + (view === value ? " selected" : "")}
+            type="button"
+            aria-current={view === value ? "page" : undefined}
+            onClick={() => setView(value)}
+          >
+            <Icon size={21} strokeWidth={view === value ? 2.3 : 1.8} aria-hidden="true" />
+            <span>{label}</span>
+          </button>
+        ))}
+      </nav>
       <div className={"toast" + (toast ? " show" : "")} role="status">
         {toast}
       </div>
@@ -282,9 +306,9 @@ function Sources({ feed }: { feed: FeedState }) {
     [
       "ADS",
       "Google Ads API",
-      "EXPLORER · BASIC PENDENTE",
+      "EXPLORER · NÃO CONECTADO",
       "warn",
-      "Nível Explorer aprovado; BASIC pendente. O adaptador está desabilitado e não é acionado pela interface pública.",
+      "A conta Google Ads ainda precisa de autorização OAuth para leitura de dados. O nível Explorer não libera KeywordPlanIdeaService; o nível Basic é necessário para ideias e planejamento de palavras-chave.",
     ],
     [
       "TR",
@@ -334,20 +358,19 @@ function Sources({ feed }: { feed: FeedState }) {
           <span className="method-ic">FD</span>
           <h3>Dados reais Google Trends</h3>
           <p>
-            Termos obtidos sem seleção prévia de palavras-chave entre <strong>Top 25</strong> e{" "}
-            <strong>Top Rising</strong>, com <strong>cobertura parcial por UF</strong>. Podem
-            aparecer assuntos de qualquer tema, inclusive esportes. Somente índice de interesse
-            relativo (0–100) e variação em <strong>pontos de índice</strong> entre semanas
-            completas. Sem índice anterior: “Sem comparação”. UF ausente: “Sem dados”, não zero.
+            Termos extraídos dos destaques reais do Brasil e classificados por pertinência
+            financeira. A temperatura indica direção do interesse: quente quando cresce, morno
+            quando estável e frio quando cai. Termos sem histórico ficam como “Sem comparação”.
+            A fonte oferece cobertura parcial por UF, não volumes absolutos de pesquisa.
           </p>
         </article>
         <article className="card method">
           <span className="method-ic">TR</span>
           <h3>Índices e comparabilidade</h3>
           <p>
-            Os índices não indicam quantidade absoluta de pesquisas nem tamanho de mercados
-            estaduais. Variação em pontos não é crescimento percentual. Comparações regionais
-            requerem a mesma janela e metodologia.
+            Os rótulos de temperatura não são pontuação de oportunidade, intenção de compra
+            ou quantidade de pesquisas. Cada assunto é nacional e possui séries regionais,
+            que não devem ser interpretadas como termos independentes.
           </p>
         </article>
         <article className="card method">
@@ -382,7 +405,7 @@ function Sources({ feed }: { feed: FeedState }) {
         <span className="arrow">→</span>
         <div className="flow-box">
           <strong>Radar interativo</strong>
-          <small>Índices relativos por UF</small>
+          <small>Temperatura real por UF</small>
         </div>
       </article>
     </>
