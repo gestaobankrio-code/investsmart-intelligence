@@ -1,6 +1,6 @@
 # InvestSmart Intelligence
 
-Central de inteligência regional da InvestSmart com os termos efetivamente publicados pelo Google Trends Top 25 e Top Rising para o Brasil, sem lista de termos predefinidos. A fonte não é restrita a finanças e não representa todas as pesquisas realizadas.
+Central de inteligência financeira regional da InvestSmart com dados reais do Google Trends Top 25 e Top Rising para o Brasil. As buscas são provenientes da fonte, sem lista de palavras-chave predefinidas; os assuntos publicados são filtrados por relevância financeira auditável, e os mesmos assuntos nacionais têm séries regionais por UF.
 
 **Aplicação:** https://investsmart-intelligence.lovable.app  
 **Lovable Project ID:** `59f4d220-1c73-44be-85dc-800f8b5d8995`
@@ -18,10 +18,10 @@ Central de inteligência regional da InvestSmart com os termos efetivamente publ
 
 ## Módulos
 
-1. Radar Brasil
-2. Ranking por UF
-3. Comparar Estados
-4. Fontes e Metodologia
+1. Radar Brasil: assuntos nacionais e evolução regional.
+2. Termos financeiros: cada palavra única, com temperatura predominante observada.
+3. Comparar Estados: Quente / Morno / Frio ou Sem comparação por UF.
+4. Fontes e Metodologia: dados, limites e situação das integrações.
 
 ## Qualidade
 
@@ -34,13 +34,15 @@ O workflow `.github/workflows/quality.yml` é obrigatório na `main` e executa:
 
 ## Fonte de dados
 
-Os dados são extraídos do Google Trends Public Dataset no BigQuery, selecionando todos os termos presentes nos destaques Brasil da fonte, sem filtros por palavras-chave ou tema. Não é correto apresentar o conjunto como exclusivamente financeiro. Os índices do Google Trends são relativos (0–100) e não equivalem a volume absoluto de pesquisas.
+Os dados são extraídos do Google Trends Public Dataset no BigQuery e classificados por relevância financeira (regra de domínio auditável). O sistema não cadastra palavras-chave de resultado. As temperaturas são apenas a direção das variações entre semanas: Quente (alta), Morno (estável), Frio (queda), Misto (sem direção predominante) ou Sem comparação (histórico insuficiente). Não são volumes de busca, CPC, índices de oportunidade ou previsões. O mesmo termo nacional pode ter séries diferentes por UF.
 
-Google Ads Keyword Planner e Google Trends API não são utilizados pela interface pública enquanto seus respectivos acessos não estiverem aprovados/configurados.
+Google Ads Keyword Planner e Google Trends API não são utilizados pela interface pública enquanto seus respectivos acessos não estiverem aprovados/configurados. O Google Ads possui um teste manual e privado de conexão read-only, detalhado em [docs/GOOGLE_ADS_INTEGRATION.md](docs/GOOGLE_ADS_INTEGRATION.md); sem credenciais e OAuth autorizados, não está conectado.
 
 ## Regras de integridade
 
 - ausência de registro não deve ser convertida em zero;
+- splash de abertura sem percentual de carregamento fictício; respeita movimento reduzido e permite pular;
+- barra de navegação inferior no mobile, com áreas de toque ampliadas e safe areas;
 - variação é exibida em pontos do índice, não em percentual;
 - falha de leitura nunca deve gerar dados fictícios;
 - datas de extração/fonte devem vir do feed e não ser hardcoded;
