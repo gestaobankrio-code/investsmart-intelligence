@@ -507,7 +507,7 @@ export function RealRanking({ st, onPick }: { st: FeedState; onPick: (uf: string
           <input
             className="field"
             id="rq"
-            placeholder="Ex.: selic, ibovespa..."
+            placeholder="Pesquise os termos presentes no feed..."
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
@@ -710,7 +710,7 @@ function StateGroups({
       <div className="card-head">
         <div>
           <div className="card-title">
-            Destaques financeiros identificados no Google Trends · por estado
+            Termos reais identificados no Google Trends · por estado
           </div>
           <div className="card-sub">
             Índice 0–100 e variação em pontos entre semanas completas. Índices de termos diferentes
