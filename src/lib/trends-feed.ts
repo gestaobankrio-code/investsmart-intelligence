@@ -16,7 +16,7 @@ export const FEED_ORIGINS = [
 export const FEED_BASE = FEED_ORIGINS[0].base;
 export const FEED_URLS = { trends: `${FEED_BASE}/trends.json`, status: `${FEED_BASE}/status.json` };
 export const POLL_MS = 30 * 60 * 1000;
-export const STALE_DAYS = 14;
+export const STALE_DAYS = 3;
 export const FEED_TIMEOUT_MS = 8_000;
 
 export interface TrendRecord {
@@ -80,6 +80,18 @@ export function parseFeed(trends: unknown, status: unknown): TrendsFeed {
   const t = trends as Record<string, unknown>;
   const s = (status && typeof status === "object" ? status : {}) as Record<string, unknown>;
   if (t["status"] !== "ok") throw new Error(`Feed reporta status "${String(t["status"])}"`);
+  // Quando o backend publica dados e status, ambos devem se referir ao
+  // mesmo snapshot. Arquivos antigos (sem versão) continuam compatíveis.
+  const trendVersion = t["versaoDados"];
+  const statusVersion = s["versaoDados"];
+  if (
+    (trendVersion != null || statusVersion != null) &&
+    (typeof trendVersion !== "string" ||
+      typeof statusVersion !== "string" ||
+      trendVersion !== statusVersion)
+  ) {
+    throw new Error("Feed inconsistente: versões de trends.json e status.json diferentes");
+  }
   if (!Array.isArray(t["registros"])) throw new Error("trends.json sem registros");
   const seen = new Set<string>();
   const records: TrendRecord[] = [];
@@ -130,11 +142,11 @@ export function parseFeed(trends: unknown, status: unknown): TrendsFeed {
   };
 }
 
-/** Dados com mais de 14 dias (pela data da fonte mais recente, ou fim da semana). */
+/** Idade da fonte no fim do dia UTC, com o limite de 3 dias do monitoramento. */
 export function feedAgeDays(feed: TrendsFeed, now = new Date()): number | null {
   const ref = feed.sourceDate ?? feed.weekEnd;
   if (!ref) return null;
-  const age = now.getTime() - Date.parse(ref);
+  const age = now.getTime() - Date.parse(`${ref.slice(0, 10)}T23:59:59Z`);
   return Number.isFinite(age) ? Math.max(0, Math.floor(age / 86400000)) : null;
 }
 
