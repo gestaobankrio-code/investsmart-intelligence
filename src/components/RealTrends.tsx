@@ -24,13 +24,7 @@ export interface FeedState {
 
 function HeatPill({ level }: { level: string }) {
   const style =
-    level === "Quente"
-      ? "hot"
-      : level === "Frio"
-        ? "cold"
-        : level === "Morno"
-          ? "warm"
-          : "unknown";
+    level === "Quente" ? "hot" : level === "Frio" ? "cold" : level === "Morno" ? "warm" : "unknown";
   return <span className={`heat-pill ${style}`}>{level}</span>;
 }
 
@@ -448,8 +442,8 @@ export function RealCompare({ st, onPick }: { st: FeedState; onPick: (uf: string
           <div>
             <div className="card-title">Evolução do termo por estado</div>
             <div className="card-sub">
-              Quente indica alta, morno indica estabilidade e frio indica queda no interesse.
-              Não representa volume ou potencial de conversão.
+              Quente indica alta, morno indica estabilidade e frio indica queda no interesse. Não
+              representa volume ou potencial de conversão.
             </div>
           </div>
         </div>

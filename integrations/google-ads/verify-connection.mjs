@@ -15,7 +15,12 @@ async function main() {
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret, refresh_token: refreshToken, grant_type: "refresh_token" }),
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: refreshToken,
+      grant_type: "refresh_token",
+    }),
     signal: AbortSignal.timeout(12000),
   });
   if (!tokenResponse.ok) throw new Error("Falha OAuth (HTTP " + tokenResponse.status + ").");
@@ -26,15 +31,26 @@ async function main() {
     "content-type": "application/json",
     ...(managerId ? { "login-customer-id": managerId } : {}),
   };
-  const adsResponse = await fetch("https://googleads.googleapis.com/v26/customers/" + customerId + "/googleAds:searchStream", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ query: "SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1" }),
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!adsResponse.ok) throw new Error("Google Ads recusou a leitura (HTTP " + adsResponse.status + "). Verifique acesso Explorer/Basic e OAuth.");
+  const adsResponse = await fetch(
+    "https://googleads.googleapis.com/v26/customers/" + customerId + "/googleAds:searchStream",
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        query: "SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1",
+      }),
+      signal: AbortSignal.timeout(15000),
+    },
+  );
+  if (!adsResponse.ok)
+    throw new Error(
+      "Google Ads recusou a leitura (HTTP " +
+        adsResponse.status +
+        "). Verifique acesso Explorer/Basic e OAuth.",
+    );
   const batches = await adsResponse.json();
-  if (!Array.isArray(batches) || !batches.some((batch) => batch.results?.length)) throw new Error("Consulta não retornou cliente.");
+  if (!Array.isArray(batches) || !batches.some((batch) => batch.results?.length))
+    throw new Error("Consulta não retornou cliente.");
   console.log("Google Ads: conexão autorizada para leitura. Nenhuma métrica foi publicada.");
 }
 await main().catch((error) => {

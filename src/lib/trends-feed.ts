@@ -58,7 +58,6 @@ export function heatOfRegionalSummary(summary: {
   return "Misto";
 }
 
-
 export interface NationalTermSummary {
   term: string;
   source: string;
