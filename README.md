@@ -14,7 +14,7 @@ Central de inteligência regional da InvestSmart para leitura de sinais financei
 - Origem primária: GitHub Pages.
 - Origem de contingência: GitHub Raw.
 - Não existe fallback para dados simulados na interface pública.
-- Feed com mais de 14 dias é identificado visualmente como desatualizado.
+- Feed com mais de 3 dias é identificado visualmente como desatualizado.
 
 ## Módulos
 
