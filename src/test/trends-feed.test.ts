@@ -34,11 +34,17 @@ describe("trends feed rules", () => {
     const f = parseFeed(base([rec({}), rec({ uf: "XX" })]), {});
     expect(f.records.map((r) => r.uf)).toEqual(["SP"]);
   });
-  it("data older than 14 days is stale", () => {
+  it("data older than 3 days is stale (UTC end-of-source-day)", () => {
     const f = parseFeed(base([rec({})]), {});
-    expect(feedAgeDays(f, new Date("2026-11-13T00:00:00Z"))).toBe(14);
-    expect(isStale(f, new Date("2026-11-13T00:00:00Z"))).toBe(false);
-    expect(isStale(f, new Date("2026-11-14T00:00:01Z"))).toBe(true);
+    expect(feedAgeDays(f, new Date("2026-11-03T00:00:00Z"))).toBe(3);
+    expect(isStale(f, new Date("2026-11-03T00:00:00Z"))).toBe(false);
+    expect(isStale(f, new Date("2026-11-04T00:00:00Z"))).toBe(true);
+  });
+  it("rejects trends and status from different published snapshots", () => {
+    const trends = { ...base([rec({})]), versaoDados: "a1" };
+    expect(() => parseFeed(trends, { versaoDados: "b2" })).toThrow("versões");
+    expect(() => parseFeed(trends, {})).toThrow("versões");
+    expect(parseFeed(trends, { versaoDados: "a1" }).records).toHaveLength(1);
   });
   it("fixture extraction is flagged as static sample", () => {
     expect(parseFeed(base([rec({})]), {}).isStaticSample).toBe(true);
