@@ -6,6 +6,7 @@ const base = (registros: unknown[]) => ({
   semanaInicio: "2026-10-25",
   semanaFim: "2026-10-31",
   origemExtracao: "fixture_csv",
+  descoberta: "sem_termos_predefinidos",
   registros,
 });
 const rec = (o: object) => ({
@@ -138,6 +139,24 @@ describe("public feed revalidation", () => {
     );
     await expect(fetchFeed()).rejects.toThrow("Feed indisponível em todas as origens");
   });
+  it("rejects a live source that still uses preselected terms", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: URL) => ({
+        ok: true,
+        json: async () =>
+          url.pathname.endsWith("trends.json")
+            ? {
+                ...base([rec({})]),
+                origemExtracao: "bigquery_live",
+                descoberta: "dinamica_taxonomia_financeira",
+              }
+            : {},
+      })),
+    );
+    await expect(fetchFeed()).rejects.toThrow("Feed rejeitado");
+  });
+
   it("rejects an unverified feed without valid regional records", async () => {
     vi.stubGlobal(
       "fetch",
