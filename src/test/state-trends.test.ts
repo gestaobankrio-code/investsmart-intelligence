@@ -43,7 +43,7 @@ describe("estado por estado, sem resultados nacionais copiados", () => {
   });
   it("não aceita registrar termos de Amazonas como se fossem de Minas", () => {
     const invalid = fixture();
-    invalid.registros[0] = { ...records[0], uf: "MG" };
+    invalid.registros[0] = { ...records[0]!, uf: "MG" };
     expect(() => parseStateFeed(invalid, status)).toThrow("Termo sem comprovação");
   });
   it("rejeita o feed nacional mesmo que possua 27 UFs", () => {
