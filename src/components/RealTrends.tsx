@@ -214,7 +214,7 @@ export function RealRadar({
   const [onlyUp, setOnlyUp] = useState(false);
   const [sort, setSort] = useState<RSort>("delta");
   const [focusId, setFocusId] = useState("");
-  const all = st.feed?.records ?? [];
+  const all = useMemo(() => st.feed?.records ?? [], [st.feed?.records]);
   const rows = useMemo(
     () =>
       all.filter(
