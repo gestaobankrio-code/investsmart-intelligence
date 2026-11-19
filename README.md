@@ -1,28 +1,89 @@
-# Investsmart Intelligence
+# InvestSmart Intelligence
 
-Implement exactly the screenshot and nothing else
+Central de inteligência regional da InvestSmart para leitura de sinais financeiros do Google Trends por UF.
 
-This project was built with [Lovable](https://lovable.dev).
+**Aplicação:** https://investsmart-intelligence.lovable.app  
+**Lovable Project ID:** `59f4d220-1c73-44be-85dc-800f8b5d8995`
 
-**Live app**: https://investsmart-intelligence.lovable.app
+## Arquitetura
 
-## Build with Lovable
+- Front-end/SSR: React 19 + TanStack Start + Vite.
+- Identidade visual: Barlow, roxo InvestSmart, neon e base neutra.
+- Fonte pública atual: `gestaobankrio-code/investsmart-trends-feed`.
+- A interface lê `trends.json` e `status.json` sem expor credenciais Google.
+- Origem primária: GitHub Pages.
+- Origem de contingência: GitHub Raw.
+- Não existe fallback para dados simulados na interface pública.
+- Feed com mais de 14 dias é identificado visualmente como desatualizado.
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/59f4d220-1c73-44be-85dc-800f8b5d8995).
+## Módulos
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+1. Radar Brasil
+2. Ranking por UF
+3. Comparar Estados
+4. Fontes e Metodologia
 
-## Development
+## Qualidade
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+O workflow `.github/workflows/quality.yml` é obrigatório na `main` e executa:
+
+- lint;
+- TypeScript typecheck;
+- testes automatizados;
+- build completo.
+
+## Fonte de dados
+
+Os dados atuais foram extraídos do Google Trends Public Dataset no BigQuery. Os índices do Google Trends são relativos (0–100) e não equivalem a volume absoluto de pesquisas.
+
+Google Ads Keyword Planner e Google Trends API não são utilizados pela interface pública enquanto seus respectivos acessos não estiverem aprovados/configurados.
+
+## Regras de integridade
+
+- ausência de registro não deve ser convertida em zero;
+- variação é exibida em pontos do índice, não em percentual;
+- falha de leitura nunca deve gerar dados fictícios;
+- datas de extração/fonte devem vir do feed e não ser hardcoded;
+- segredos e credenciais nunca devem ser colocados no código do navegador.
+
+## Desenvolvimento
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+bun install
+bun run dev
 ```
 
-<!-- growth-ops e2e check 2026-11-06 -->
+Validação local:
+
+```sh
+bun run lint
+bunx tsc --noEmit
+bun run test
+bun run build
+```
+
+## Integrações operacionais
+
+### Growth Ops
+
+O workflow `Notificar Growth Ops` envia `repository_dispatch` para:
+
+`gestaobankrio-code/growth-ops-investsmart`
+
+Ele depende do secret de Actions:
+
+`GROWTH_OPS_PAT`
+
+O token nunca deve ser armazenado no repositório.
+
+### Feed Google Trends
+
+A atualização do feed é responsabilidade do repositório:
+
+`gestaobankrio-code/investsmart-trends-feed`
+
+A UI permanece operacional quando a origem principal falha, usando o fallback GitHub Raw, mas dados antigos são explicitamente marcados como desatualizados.
+
+## Lovable
+
+Este projeto permanece conectado ao Lovable. Commits enviados à branch conectada devem permanecer lineares; não reescreva o histórico publicado com force-push/rebase.
