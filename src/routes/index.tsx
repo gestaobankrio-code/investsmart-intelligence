@@ -355,7 +355,7 @@ function Sources({ feed }: { feed: FeedState }) {
           <h3>Verificação do feed</h3>
           <p>
             Releitura ao abrir a plataforma, a cada 30 minutos e pela verificação manual, sem novas
-            consultas ao BigQuery. Dados com mais de 14 dias são marcados como desatualizados. A
+            consultas ao BigQuery. Dados com mais de 3 dias são marcados como desatualizados. A
             verificação do feed não confirma nova extração nem agendamento automático.
           </p>
         </article>
