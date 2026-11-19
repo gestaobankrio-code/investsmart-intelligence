@@ -113,7 +113,10 @@ function median(numbers: number[]): number | null {
   if (!numbers.length) return null;
   const ordered = [...numbers].sort((a, b) => a - b);
   const mid = Math.floor(ordered.length / 2);
-  return ordered.length % 2 ? ordered[mid] : (ordered[mid - 1] + ordered[mid]) / 2;
+  if (ordered.length % 2) return ordered[mid] ?? null;
+  const left = ordered[mid - 1];
+  const right = ordered[mid];
+  return left == null || right == null ? null : (left + right) / 2;
 }
 
 export function regionalDifferentials(records: TrendRecord[], uf: string): RegionalDifferential[] {
