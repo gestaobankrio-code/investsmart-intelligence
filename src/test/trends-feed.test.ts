@@ -3,6 +3,8 @@ import {
   feedAgeDays,
   fetchFeed,
   fmtPts,
+  heatOfDelta,
+  heatOfRegionalSummary,
   isStale,
   parseFeed,
   POLL_MS,
@@ -34,6 +36,23 @@ describe("trends feed rules", () => {
     const f = parseFeed(base([rec({})]), {});
     expect(f.records[0]?.deltaPts).toBe(15);
     expect(fmtPts(15)).toBe("+15 pts");
+  });
+  it("temperature uses observed direction only, not search volume", () => {
+    expect(heatOfDelta(12)).toBe("Quente");
+    expect(heatOfDelta(0)).toBe("Morno");
+    expect(heatOfDelta(-4)).toBe("Frio");
+    expect(heatOfDelta(null)).toBe("Sem comparação");
+  });
+  it("national temperature distinguishes predominant signs and mixed regions", () => {
+    expect(heatOfRegionalSummary({ risingUFs: 17, fallingUFs: 4, stableUFs: 3 })).toBe(
+      "Quente",
+    );
+    expect(heatOfRegionalSummary({ risingUFs: 2, fallingUFs: 19, stableUFs: 0 })).toBe("Frio");
+    expect(heatOfRegionalSummary({ risingUFs: 0, fallingUFs: 0, stableUFs: 5 })).toBe("Morno");
+    expect(heatOfRegionalSummary({ risingUFs: 3, fallingUFs: 3, stableUFs: 0 })).toBe("Misto");
+    expect(heatOfRegionalSummary({ risingUFs: 0, fallingUFs: 0, stableUFs: 0 })).toBe(
+      "Sem comparação",
+    );
   });
   it("null previous index means 'Sem comparação'", () => {
     const f = parseFeed(base([rec({ indiceAnterior: null })]), {});
