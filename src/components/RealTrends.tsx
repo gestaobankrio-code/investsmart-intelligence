@@ -9,6 +9,7 @@ import {
   fmtDateTime,
   heatOfDelta,
   heatOfRegionalSummary,
+  isHistoricalSignal,
   isStale,
   regionalDifferentials,
   summarizeNationalTerms,
@@ -29,7 +30,8 @@ function HeatPill({ level }: { level: string }) {
   return <span className={`heat-pill ${style}`}>{level}</span>;
 }
 
-const trendLabel = (r: TrendRecord) => heatOfDelta(r.deltaPts);
+const trendLabel = (r: TrendRecord) =>
+  isHistoricalSignal(r.sourceDate) ? "Histórico" : heatOfDelta(r.deltaPts);
 
 export function RealNotice({ st }: { st: FeedState }) {
   const { feed, error, readAt } = st;
@@ -45,14 +47,19 @@ export function RealNotice({ st }: { st: FeedState }) {
     );
   }
   const stale = isStale(feed);
+  const historicalCount = feed.records.filter((r) => isHistoricalSignal(r.sourceDate)).length;
   return (
     <div
-      className={"notice " + (stale ? "stale" : "real")}
-      role={stale || error ? "alert" : "status"}
+      className={"notice " + (stale || historicalCount ? "stale" : "real")}
+      role={stale || historicalCount || error ? "alert" : "status"}
     >
       <span>
         <strong>
-          {stale ? "DADOS REAIS · FONTE DESATUALIZADA" : "DADOS REAIS · FONTE ATUALIZADA"}
+          {stale
+            ? "DADOS REAIS · FONTE DESATUALIZADA"
+            : historicalCount
+              ? "DADOS REAIS · CONTÉM SÉRIES HISTÓRICAS"
+              : "DADOS REAIS · FONTE ATUALIZADA"}
         </strong>
         {" · "}Fonte {fmtDate(feed.sourceDate)}
         {" · "}Extração {fmtDateTime(feed.generatedAt)}
@@ -61,7 +68,13 @@ export function RealNotice({ st }: { st: FeedState }) {
         {readAt && <> · Consultado {readAt}</>}
         {error && <> · Falha na releitura: {error}</>}
       </span>
-      <span className="flag">{stale ? "REVISAR ATUALIZAÇÃO" : "SEM DADOS SIMULADOS"}</span>
+      <span className="flag">
+        {stale
+          ? "REVISAR ATUALIZAÇÃO"
+          : historicalCount
+            ? `${historicalCount} REGISTROS HISTÓRICOS`
+            : "SEM DADOS SIMULADOS"}
+      </span>
     </div>
   );
 }
@@ -70,7 +83,7 @@ function regionalCells(rows: TrendRecord[]): MapCell[] {
   return UFS.flatMap((uf) => {
     const entries = rows.filter((r) => r.uf === uf);
     if (!entries.length) return [];
-    const rising = entries.filter((r) => r.trend === "Em alta").length;
+    const rising = entries.filter((r) => r.trend === "Em alta" && !isHistoricalSignal(r.sourceDate)).length;
     return [
       {
         uf,
@@ -101,7 +114,12 @@ export function RealRadar({
   const [showAllStateTerms, setShowAllStateTerms] = useState(false);
   const all = useMemo(() => st.feed?.records ?? [], [st.feed?.records]);
   const rows = useMemo(
-    () => all.filter((r) => (!term || r.term === term) && (!onlyUp || r.trend === "Em alta")),
+    () =>
+      all.filter(
+        (r) =>
+          (!term || r.term === term) &&
+          (!onlyUp || (r.trend === "Em alta" && !isHistoricalSignal(r.sourceDate))),
+      ),
     [all, term, onlyUp],
   );
   const unique = summarizeNationalTerms(rows);
@@ -113,7 +131,9 @@ export function RealRadar({
     () =>
       regionalDifferentials(all, selectedUF).filter(
         (item) =>
-          (!term || item.record.term === term) && (!onlyUp || item.record.trend === "Em alta"),
+          (!term || item.record.term === term) &&
+          (!onlyUp ||
+            (item.record.trend === "Em alta" && !isHistoricalSignal(item.record.sourceDate))),
       ),
     [all, selectedUF, term, onlyUp],
   );
@@ -121,7 +141,11 @@ export function RealRadar({
   const visibleStateRecords =
     showAllStateTerms || term ? stateRecords : highlighted.map((item) => item.record);
   const cells = useMemo(() => regionalCells(rows), [rows]);
-  const statesWithRise = new Set(rows.filter((r) => r.trend === "Em alta").map((r) => r.uf)).size;
+  const statesWithRise = new Set(
+    rows
+      .filter((r) => r.trend === "Em alta" && !isHistoricalSignal(r.sourceDate))
+      .map((r) => r.uf),
+  ).size;
   const selectState = (next: string) => {
     setUf(next);
     setFocusUF(next);
@@ -323,7 +347,7 @@ export function RealRadar({
                   <td data-label="Fonte">{s.source}</td>
                   <td data-label="UFs com dados">{s.ufs}</td>
                   <td data-label="Temperatura">
-                    <HeatPill level={heatOfRegionalSummary(s)} />
+                    <HeatPill level={isHistoricalSignal(s.latestDate) ? "Histórico" : heatOfRegionalSummary(s)} />
                   </td>
                   <td data-label="UFs em alta">{s.risingUFs}</td>
                   <td data-label="Data">{fmtDate(s.latestDate)}</td>
@@ -431,7 +455,7 @@ export function RealRanking({ st, onPick }: { st: FeedState; onPick: (uf: string
                   <td data-label="Altas">{s.risingUFs}</td>
                   <td data-label="Quedas">{s.fallingUFs}</td>
                   <td data-label="Temperatura">
-                    <HeatPill level={heatOfRegionalSummary(s)} />
+                    <HeatPill level={isHistoricalSignal(s.latestDate) ? "Histórico" : heatOfRegionalSummary(s)} />
                   </td>
                   <td data-label="Data">{fmtDate(s.latestDate)}</td>
                 </tr>
