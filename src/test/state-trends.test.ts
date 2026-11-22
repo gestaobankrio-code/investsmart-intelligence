@@ -58,7 +58,12 @@ describe("estado por estado, sem resultados nacionais copiados", () => {
     expect(() => parseStateFeed(invalid, status)).toThrow("sem tendências financeiras");
   });
   it("sem tendência financeira não é preenchido com termos nacionais", () => {
-    const zero = { ...fixture(), registros: [], totalRegistros: 0, status: "sem_dados_financeiros" };
+    const zero = {
+      ...fixture(),
+      registros: [],
+      totalRegistros: 0,
+      status: "sem_dados_financeiros",
+    };
     expect(recordsForState(parseStateFeed(zero, status), "MG")).toEqual([]);
   });
 });
