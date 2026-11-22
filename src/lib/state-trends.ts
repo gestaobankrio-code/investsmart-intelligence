@@ -15,7 +15,10 @@ export interface StateTrendRecord {
 }
 
 export type StateCoverageStatus =
-  "com_termos_financeiros" | "sem_tendencia_financeira" | "sem_termos_financeiros_no_recorte" | "falha_consulta";
+  | "com_termos_financeiros"
+  | "sem_tendencia_financeira"
+  | "sem_termos_financeiros_no_recorte"
+  | "falha_consulta";
 export interface StateCoverage {
   uf: string;
   status: StateCoverageStatus;
@@ -72,7 +75,12 @@ export function parseStateFeed(payload: unknown, stateStatus: unknown): StateTre
     if (
       !UF_NAMES[uf] ||
       covered.has(uf) ||
-      !["com_termos_financeiros", "sem_tendencia_financeira", "sem_termos_financeiros_no_recorte", "falha_consulta"].includes(status)
+      ![
+        "com_termos_financeiros",
+        "sem_tendencia_financeira",
+        "sem_termos_financeiros_no_recorte",
+        "falha_consulta",
+      ].includes(status)
     ) {
       throw new Error("Cobertura por UF inconsistente");
     }
