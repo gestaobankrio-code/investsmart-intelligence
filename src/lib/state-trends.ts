@@ -15,7 +15,7 @@ export interface StateTrendRecord {
 }
 
 export type StateCoverageStatus =
-  "com_termos_financeiros" | "sem_tendencia_financeira" | "falha_consulta";
+  "com_termos_financeiros" | "sem_tendencia_financeira" | "sem_termos_financeiros_no_recorte" | "falha_consulta";
 export interface StateCoverage {
   uf: string;
   status: StateCoverageStatus;
@@ -30,6 +30,7 @@ export interface StateTrendsFeed {
   withFinance: number;
   responded: number;
   origin: string | null;
+  availability: "com_resultados" | "sem_termos_no_recorte";
 }
 
 const dateOrNull = (raw: unknown): string | null =>
@@ -42,7 +43,7 @@ export function parseStateFeed(payload: unknown, stateStatus: unknown): StateTre
     string,
     unknown
   >;
-  if (!["ok", "parcial"].includes(String(f["status"]))) {
+  if (!["ok", "parcial", "sem_dados_financeiros"].includes(String(f["status"]))) {
     throw new Error("Feed estadual sem status verificável");
   }
   if (
@@ -71,7 +72,7 @@ export function parseStateFeed(payload: unknown, stateStatus: unknown): StateTre
     if (
       !UF_NAMES[uf] ||
       covered.has(uf) ||
-      !["com_termos_financeiros", "sem_tendencia_financeira", "falha_consulta"].includes(status)
+      !["com_termos_financeiros", "sem_tendencia_financeira", "sem_termos_financeiros_no_recorte", "falha_consulta"].includes(status)
     ) {
       throw new Error("Cobertura por UF inconsistente");
     }
@@ -118,6 +119,13 @@ export function parseStateFeed(payload: unknown, stateStatus: unknown): StateTre
     });
   }
   if (f["totalRegistros"] !== records.length) throw new Error("Contagem estadual divergente");
+  // Não aceitar 0 registros sob o status verde "ok".
+  if (records.length === 0 && f["status"] === "ok") {
+    throw new Error("Feed estadual declarou sucesso de dados sem tendências financeiras");
+  }
+  if (records.length > 0 && f["status"] === "sem_dados_financeiros") {
+    throw new Error("Feed informa ausência de dados, mas contém tendências");
+  }
   const generatedAt = dateOrNull(f["geradoEm"]);
   if (!generatedAt) throw new Error("Data de atualização estadual inválida");
   return {
@@ -127,6 +135,7 @@ export function parseStateFeed(payload: unknown, stateStatus: unknown): StateTre
     withFinance: coverage.filter((v) => v.status === "com_termos_financeiros").length,
     responded: coverage.filter((v) => v.status !== "falha_consulta").length,
     origin: null,
+    availability: records.length ? "com_resultados" : "sem_termos_no_recorte",
   };
 }
 
