@@ -83,7 +83,9 @@ function regionalCells(rows: TrendRecord[]): MapCell[] {
   return UFS.flatMap((uf) => {
     const entries = rows.filter((r) => r.uf === uf);
     if (!entries.length) return [];
-    const rising = entries.filter((r) => r.trend === "Em alta" && !isHistoricalSignal(r.sourceDate)).length;
+    const rising = entries.filter(
+      (r) => r.trend === "Em alta" && !isHistoricalSignal(r.sourceDate),
+    ).length;
     return [
       {
         uf,
@@ -142,9 +144,7 @@ export function RealRadar({
     showAllStateTerms || term ? stateRecords : highlighted.map((item) => item.record);
   const cells = useMemo(() => regionalCells(rows), [rows]);
   const statesWithRise = new Set(
-    rows
-      .filter((r) => r.trend === "Em alta" && !isHistoricalSignal(r.sourceDate))
-      .map((r) => r.uf),
+    rows.filter((r) => r.trend === "Em alta" && !isHistoricalSignal(r.sourceDate)).map((r) => r.uf),
   ).size;
   const selectState = (next: string) => {
     setUf(next);
@@ -347,7 +347,11 @@ export function RealRadar({
                   <td data-label="Fonte">{s.source}</td>
                   <td data-label="UFs com dados">{s.ufs}</td>
                   <td data-label="Temperatura">
-                    <HeatPill level={isHistoricalSignal(s.latestDate) ? "Histórico" : heatOfRegionalSummary(s)} />
+                    <HeatPill
+                      level={
+                        isHistoricalSignal(s.latestDate) ? "Histórico" : heatOfRegionalSummary(s)
+                      }
+                    />
                   </td>
                   <td data-label="UFs em alta">{s.risingUFs}</td>
                   <td data-label="Data">{fmtDate(s.latestDate)}</td>
@@ -455,7 +459,11 @@ export function RealRanking({ st, onPick }: { st: FeedState; onPick: (uf: string
                   <td data-label="Altas">{s.risingUFs}</td>
                   <td data-label="Quedas">{s.fallingUFs}</td>
                   <td data-label="Temperatura">
-                    <HeatPill level={isHistoricalSignal(s.latestDate) ? "Histórico" : heatOfRegionalSummary(s)} />
+                    <HeatPill
+                      level={
+                        isHistoricalSignal(s.latestDate) ? "Histórico" : heatOfRegionalSummary(s)
+                      }
+                    />
                   </td>
                   <td data-label="Data">{fmtDate(s.latestDate)}</td>
                 </tr>
