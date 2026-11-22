@@ -46,7 +46,6 @@ export function isHistoricalSignal(sourceDate: string | null, now = new Date()):
   return !Number.isFinite(end) || now.getTime() - end > SIGNAL_RECENCY_DAYS * 86400000;
 }
 
-
 /** Temperatura da EVOLUÇÃO, não do volume absoluto nem de oportunidade comercial. */
 export type HeatLevel = "Quente" | "Morno" | "Frio" | "Sem comparação";
 
