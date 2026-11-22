@@ -53,8 +53,12 @@ describe("estado por estado, sem resultados nacionais copiados", () => {
   it("não mistura feeds publicados em versões diferentes", () => {
     expect(() => parseStateFeed(fixture(), { versaoDados: "outro" })).toThrow("mesma versão");
   });
+  it("recusa status verde OK se a amostra estadual não tiver resultados", () => {
+    const invalid = { ...fixture(), registros: [], totalRegistros: 0 };
+    expect(() => parseStateFeed(invalid, status)).toThrow("sem tendências financeiras");
+  });
   it("sem tendência financeira não é preenchido com termos nacionais", () => {
-    const zero = { ...fixture(), registros: [], totalRegistros: 0 };
+    const zero = { ...fixture(), registros: [], totalRegistros: 0, status: "sem_dados_financeiros" };
     expect(recordsForState(parseStateFeed(zero, status), "MG")).toEqual([]);
   });
 });
