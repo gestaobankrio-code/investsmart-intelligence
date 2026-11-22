@@ -5,6 +5,7 @@ import {
   fmtPts,
   heatOfDelta,
   heatOfRegionalSummary,
+  isHistoricalSignal,
   isStale,
   parseFeed,
   POLL_MS,
@@ -52,6 +53,13 @@ describe("trends feed rules", () => {
     expect(heatOfRegionalSummary({ risingUFs: 0, fallingUFs: 0, stableUFs: 0 })).toBe(
       "Sem comparação",
     );
+  });
+  it("não classifica uma busca de outubro como tendência quente de novembro", () => {
+    const now = new Date("2026-11-22T23:00:00Z");
+    expect(isHistoricalSignal("2026-10-28", now)).toBe(true);
+    expect(isHistoricalSignal("2026-11-11", now)).toBe(true);
+    expect(isHistoricalSignal("2026-11-18", now)).toBe(false);
+    expect(isHistoricalSignal(null, now)).toBe(true);
   });
   it("null previous index means 'Sem comparação'", () => {
     const f = parseFeed(base([rec({ indiceAnterior: null })]), {});
