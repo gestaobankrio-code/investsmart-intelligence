@@ -96,22 +96,34 @@ export function StateRadar({
   const noFinanceResults = feed.availability === "sem_termos_no_recorte";
   return (
     <>
-      <div className={"notice " + (sourceOld || error || noFinanceResults ? "stale" : "real")} role="status">
+      <div
+        className={"notice " + (sourceOld || error || noFinanceResults ? "stale" : "real")}
+        role="status"
+      >
         <span>
-          <strong>{noFinanceResults ? "CONSULTAS CONCLUÍDAS · SEM TERMOS FINANCEIROS NA AMOSTRA" : "TENDÊNCIAS FINANCEIRAS ENCONTRADAS EM CADA ESTADO"}</strong>
+          <strong>
+            {noFinanceResults
+              ? "CONSULTAS CONCLUÍDAS · SEM TERMOS FINANCEIROS NA AMOSTRA"
+              : "TENDÊNCIAS FINANCEIRAS ENCONTRADAS EM CADA ESTADO"}
+          </strong>
           {" · "}Fonte: Google Trends Trending Now RSS (geo=BR-UF)
           {" · "}Última consulta: {fmtDateTime(feed.generatedAt)}
           {error && <> · Última atualização falhou; exibindo coleta anterior</>}
         </span>
         <span className="flag">
-          {sourceOld ? "REVISAR ATUALIZAÇÃO" : noFinanceResults ? "SEM RESULTADOS NESTE RECORTE" : "ORIGEM ESTADUAL"}
+          {sourceOld
+            ? "REVISAR ATUALIZAÇÃO"
+            : noFinanceResults
+              ? "SEM RESULTADOS NESTE RECORTE"
+              : "ORIGEM ESTADUAL"}
         </span>
       </div>
       <div className="notice">
         <span>
           <strong>Como funciona:</strong> cada estado recebe exclusivamente os assuntos retornados
           em sua própria consulta ao Google. O RSS apresenta apenas uma amostra das tendências
-          recentes. Uma consulta válida pode retornar zero termos classificados como financeiros; isso não demonstra ausência de pesquisas financeiras na UF.
+          recentes. Uma consulta válida pode retornar zero termos classificados como financeiros;
+          isso não demonstra ausência de pesquisas financeiras na UF.
         </span>
       </div>
       <div className="filters">
