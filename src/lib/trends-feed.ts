@@ -37,6 +37,16 @@ export interface TrendRecord {
 
 export type Trend = "Em alta" | "Em queda" | "Estável" | "Sem comparação";
 
+/** Não chamar de quente uma variação de semana encerrada há mais de sete dias. */
+export const SIGNAL_RECENCY_DAYS = 7;
+export function isHistoricalSignal(sourceDate: string | null, now = new Date()): boolean {
+  if (!sourceDate) return true;
+  const day = sourceDate.slice(0, 10);
+  const end = Date.parse(`${day}T23:59:59Z`);
+  return !Number.isFinite(end) || now.getTime() - end > SIGNAL_RECENCY_DAYS * 86400000;
+}
+
+
 /** Temperatura da EVOLUÇÃO, não do volume absoluto nem de oportunidade comercial. */
 export type HeatLevel = "Quente" | "Morno" | "Frio" | "Sem comparação";
 
