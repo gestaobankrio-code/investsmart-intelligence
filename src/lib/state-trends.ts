@@ -118,7 +118,9 @@ export function parseStateFeed(payload: unknown, stateStatus: unknown): StateTre
           (source.pathname === "/trending" &&
             source.searchParams.get("geo") === geo &&
             source.searchParams.get("hours") === "168"));
-    } catch { /* Bloqueia URLs de origem inconsistentes. */ }
+    } catch {
+      /* Bloqueia URLs de origem inconsistentes. */
+    }
     if (
       !UF_NAMES[uf] ||
       !term ||

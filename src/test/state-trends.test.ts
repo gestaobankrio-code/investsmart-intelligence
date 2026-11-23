@@ -34,17 +34,19 @@ const status = { versaoDados: "state123" };
 
 describe("estado por estado, sem resultados nacionais copiados", () => {
   it("lê tendências financeiras reais de sete dias de cada UF", () => {
-    const regionRecords = [{
-      uf: "SP",
-      termo: "dólar hoje",
-      fonte: "Google Trends Trending Now",
-      escopo: "tendencia_descoberta_na_uf",
-      geoConsultado: "BR-SP",
-      dataFonte: "2026-11-23T09:00:00Z",
-      urlFonte: "https://trends.google.com/trending?geo=BR-SP&hl=pt-BR&hours=168",
-      categoriaGoogleId: 3,
-      janelaHoras: 168,
-    }];
+    const regionRecords = [
+      {
+        uf: "SP",
+        termo: "dólar hoje",
+        fonte: "Google Trends Trending Now",
+        escopo: "tendencia_descoberta_na_uf",
+        geoConsultado: "BR-SP",
+        dataFonte: "2026-11-23T09:00:00Z",
+        urlFonte: "https://trends.google.com/trending?geo=BR-SP&hl=pt-BR&hours=168",
+        categoriaGoogleId: 3,
+        janelaHoras: 168,
+      },
+    ];
     const pageFeed = {
       ...fixture(),
       origemExtracao: "google_trends_pagina_regional_7d",
@@ -64,10 +66,12 @@ describe("estado por estado, sem resultados nacionais copiados", () => {
     expect(recordsForState(parsed, "MG")).toEqual([]);
     const forged = {
       ...pageFeed,
-      registros: [{
-        ...regionRecords[0]!,
-        urlFonte: "https://trends.google.com/trending?geo=BR-RJ&hours=168",
-      }],
+      registros: [
+        {
+          ...regionRecords[0]!,
+          urlFonte: "https://trends.google.com/trending?geo=BR-RJ&hours=168",
+        },
+      ],
     };
     expect(() => parseStateFeed(forged, status)).toThrow("Termo sem comprovação");
     const wrongCategory = {
