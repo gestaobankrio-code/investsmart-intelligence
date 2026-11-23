@@ -5,7 +5,10 @@ import { AppSplash } from "@/components/AppSplash";
 import { StateRadar } from "@/components/StateRadar";
 import logo from "@/assets/investsmart-logo.png.asset.json";
 import { Button } from "@/components/ui/button";
-import { RealCompare, RealNotice, RealRanking, type FeedState } from "@/components/RealTrends";
+import { RealNotice, type FeedState } from "@/components/RealTrends";
+import { FinancialTermsPage } from "@/components/FinancialTermsPage";
+import { CompareStatesPage } from "@/components/CompareStatesPage";
+import "@/styles/finance-pages.css";
 import { POLL_MS, feedAgeDays, fetchFeed, fmtDateTime, isStale } from "@/lib/trends-feed";
 
 export const Route = createFileRoute("/")({
@@ -51,6 +54,7 @@ function App() {
   const [focusUF, setFocusUF] = useState("SP");
   const [toast, setToast] = useState<string | null>(null);
   const [stateRefreshVersion, setStateRefreshVersion] = useState(0);
+  const [crossViewTerm, setCrossViewTerm] = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const inFlight = useRef(false);
   const [feedSt, setFeedSt] = useState<FeedState>({
@@ -99,10 +103,13 @@ function App() {
       clearTimeout(toastTimer.current);
     };
   }, [loadFeed]);
-  const pick = (state: string) => {
-    setUf(state);
-    setFocusUF(state);
-    setView("radar");
+  const openCompareTerm = (term: string) => {
+    setCrossViewTerm(term);
+    setView("compare");
+  };
+  const openTermDetails = (term: string) => {
+    setCrossViewTerm(term);
+    setView("ranking");
   };
   const titles: Record<View, [string, string, string, string]> = {
     radar: [
@@ -112,16 +119,16 @@ function App() {
       "Assuntos financeiros descobertos diretamente no Google Trends de cada UF.",
     ],
     ranking: [
-      "Assuntos do mercado financeiro",
+      "Pesquisa financeira · Estados brasileiros",
       "TERMOS",
-      "EM DESTAQUE",
-      "Destaques nacionais do BigQuery, mantidos separados das buscas descobertas por estado.",
+      "FINANCEIROS",
+      "Explore expressões reais encontradas nas tendências de cada UF, com fonte e data.",
     ],
     compare: [
-      "Inteligência comparativa",
+      "Análise comparativa · Consultas estaduais",
       "COMPARAR",
       "ESTADOS",
-      "Compare a evolução regional dos assuntos nacionais, sem tratá-los como buscas exclusivas da UF.",
+      "Descubra quais assuntos aparecem em duas ou três UFs, sem estimar demanda.",
     ],
     sources: [
       "Fontes de dados",
@@ -162,7 +169,7 @@ function App() {
         <div className="top-meta">
           <span className={"env " + health}>
             <i className="dot" aria-hidden="true" />
-            {view === "radar" ? "RSS GOOGLE TRENDS · CONSULTA POR UF" : healthLabel}
+            {view === "sources" ? healthLabel : "GOOGLE TRENDS · CONSULTA POR UF"}
           </span>
           <div className="user-badge" aria-hidden="true">
             IS
@@ -193,8 +200,8 @@ function App() {
           <div className="side-foot">
             <strong>Inteligência regional</strong>
             <br />
-            Tendências por UF consultadas diretamente no RSS estadual. O BigQuery nacional permanece
-            em um módulo separado.
+            Tendências financeiras consultadas por UF no Google Trends. A fonte nacional do BigQuery
+            permanece identificada na metodologia.
           </div>
         </aside>
         <main className="main" id="conteudo-principal" tabIndex={-1}>
@@ -208,23 +215,23 @@ function App() {
                 <p className="subtitle">{title[3]}</p>
               </div>
               <div className="head-tools">
-                <VerifyBtn
-                  st={view === "radar" ? { ...feedSt, loading: false, error: null } : feedSt}
-                  onClick={() => {
-                    if (view === "radar") {
-                      setStateRefreshVersion((value) => value + 1);
-                      showToast(
-                        "Reconsultando o feed estadual publicado, sem inventar novos termos.",
-                      );
-                    } else {
-                      void loadFeed(true);
-                    }
-                  }}
-                />
+                {(view === "radar" || view === "sources") && (
+                  <VerifyBtn
+                    st={view === "radar" ? { ...feedSt, loading: false, error: null } : feedSt}
+                    onClick={() => {
+                      if (view === "radar") {
+                        setStateRefreshVersion((value) => value + 1);
+                        showToast("Reconsultando o feed estadual publicado.");
+                      } else {
+                        void loadFeed(true);
+                      }
+                    }}
+                  />
+                )}
               </div>
             </div>
-            {view !== "radar" && <RealNotice st={feedSt} />}
-            {view !== "radar" && !feedSt.feed && (
+            {view === "sources" && <RealNotice st={feedSt} />}
+            {view === "sources" && !feedSt.feed && (
               <FeedEmptyState st={feedSt} onRetry={() => void loadFeed(true)} />
             )}
             {view === "radar" && (
@@ -236,13 +243,17 @@ function App() {
                 refreshVersion={stateRefreshVersion}
               />
             )}
-            {view === "ranking" && feedSt.feed && <RealRanking st={feedSt} onPick={pick} />}
-            {view === "compare" && feedSt.feed && <RealCompare st={feedSt} onPick={pick} />}
+            {view === "ranking" && (
+              <FinancialTermsPage focusTerm={crossViewTerm} onCompare={openCompareTerm} />
+            )}
+            {view === "compare" && (
+              <CompareStatesPage focusTerm={crossViewTerm} onExploreTerm={openTermDetails} />
+            )}
             {view === "sources" && <Sources feed={feedSt} />}
           </section>
           <footer className="footer">
             <span>INVESTSMART · INTELIGÊNCIA DE BUSCAS</span>
-            <span>Google Trends · tendências estaduais reais · sem preenchimento artificial</span>
+            <span>Google Trends · termos reais por UF · sem estimativas de volume de mercado</span>
           </footer>
         </main>
       </div>
