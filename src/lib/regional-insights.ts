@@ -42,16 +42,14 @@ export function groupRegionalTopics(records: StateTrendRecord[]): RegionalTopic[
         latestAt: occurrences[0]?.publishedAt ?? null,
       };
     })
-    .sort(
-      (a, b) =>
-        time(b.latestAt) - time(a.latestAt) ||
-        a.label.localeCompare(b.label, "pt-BR"),
-    );
+    .sort((a, b) => time(b.latestAt) - time(a.latestAt) || a.label.localeCompare(b.label, "pt-BR"));
 }
 
 export interface RegionalComparison {
   ufs: string[];
-  topics: Array<RegionalTopic & { presentIn: number; shared: boolean; onlyWithinSelection: boolean }>;
+  topics: Array<
+    RegionalTopic & { presentIn: number; shared: boolean; onlyWithinSelection: boolean }
+  >;
   sharedAcrossAll: number;
   exclusiveWithinSelection: number;
   unionCount: number;
@@ -87,9 +85,6 @@ export function compareRegionalStates(
   };
 }
 
-export function stateTopics(
-  topics: RegionalTopic[],
-  uf: string,
-): RegionalTopic[] {
+export function stateTopics(topics: RegionalTopic[], uf: string): RegionalTopic[] {
   return topics.filter((t) => t.states.includes(uf));
 }

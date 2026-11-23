@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { compareRegionalStates, groupRegionalTopics, stateTopics, topicKey } from "@/lib/regional-insights";
+import {
+  compareRegionalStates,
+  groupRegionalTopics,
+  stateTopics,
+  topicKey,
+} from "@/lib/regional-insights";
 import type { StateTrendRecord } from "@/lib/state-trends";
 
 const row = (term: string, uf: string, when = "2026-11-23T08:00:00Z"): StateTrendRecord => ({
