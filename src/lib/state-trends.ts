@@ -34,6 +34,8 @@ export interface StateTrendsFeed {
   responded: number;
   origin: string | null;
   availability: "com_resultados" | "sem_termos_no_recorte";
+  extraction: "google_trends_rss_regional" | "google_trends_pagina_regional_7d";
+  windowHours: number | null;
 }
 
 const dateOrNull = (raw: unknown): string | null =>
@@ -49,11 +51,14 @@ export function parseStateFeed(payload: unknown, stateStatus: unknown): StateTre
   if (!["ok", "parcial", "sem_dados_financeiros"].includes(String(f["status"]))) {
     throw new Error("Feed estadual sem status verificável");
   }
+  const extraction = String(f["origemExtracao"]);
+  const fromPage = extraction === "google_trends_pagina_regional_7d";
   if (
-    f["origemExtracao"] !== "google_trends_rss_regional" ||
-    f["escopoTermos"] !== "descoberta_estadual_por_geo"
+    !["google_trends_rss_regional", "google_trends_pagina_regional_7d"].includes(extraction) ||
+    f["escopoTermos"] !== "descoberta_estadual_por_geo" ||
+    (fromPage && f["janelaHoras"] !== 168)
   ) {
-    throw new Error("Fonte não comprova descoberta estadual");
+    throw new Error("Fonte não comprova descoberta estadual ou janela de consulta");
   }
   if (
     typeof f["versaoDados"] !== "string" ||
@@ -103,6 +108,17 @@ export function parseStateFeed(payload: unknown, stateStatus: unknown): StateTre
     const geo = String(r["geoConsultado"] ?? "");
     const url = String(r["urlFonte"] ?? "");
     const key = uf + "|" + term.toLocaleLowerCase("pt-BR");
+    let locationVerified = false;
+    try {
+      const source = new URL(url);
+      locationVerified =
+        source.protocol === "https:" &&
+        source.hostname === "trends.google.com" &&
+        (!fromPage ||
+          (source.pathname === "/trending" &&
+            source.searchParams.get("geo") === geo &&
+            source.searchParams.get("hours") === "168"));
+    } catch { /* Bloqueia URLs de origem inconsistentes. */ }
     if (
       !UF_NAMES[uf] ||
       !term ||
@@ -110,7 +126,8 @@ export function parseStateFeed(payload: unknown, stateStatus: unknown): StateTre
       geo !== "BR-" + uf ||
       r["escopo"] !== "tendencia_descoberta_na_uf" ||
       r["fonte"] !== "Google Trends Trending Now" ||
-      !url.startsWith("https://trends.google.com/") ||
+      !locationVerified ||
+      (fromPage && (r["categoriaGoogleId"] !== 3 || r["janelaHoras"] !== 168)) ||
       covered.has(uf) === false ||
       seen.has(key)
     ) {
@@ -144,6 +161,8 @@ export function parseStateFeed(payload: unknown, stateStatus: unknown): StateTre
     responded: coverage.filter((v) => v.status !== "falha_consulta").length,
     origin: null,
     availability: records.length ? "com_resultados" : "sem_termos_no_recorte",
+    extraction: extraction as StateTrendsFeed["extraction"],
+    windowHours: fromPage ? 168 : null,
   };
 }
 
