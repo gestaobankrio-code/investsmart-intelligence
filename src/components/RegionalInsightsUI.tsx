@@ -2,7 +2,7 @@ import { AlertCircle, CalendarDays, Database, RefreshCw } from "lucide-react";
 import { fmtDateTime } from "@/lib/trends-feed";
 import type { RegionalFeedState } from "@/hooks/useRegionalFeed";
 
-export const isFeedAged = (generatedAt: string) => {
+const isFeedAged = (generatedAt: string) => {
   const age = Date.now() - Date.parse(generatedAt);
   return !Number.isFinite(age) || age > 12 * 60 * 60 * 1000;
 };
