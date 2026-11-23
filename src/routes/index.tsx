@@ -18,13 +18,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Assuntos financeiros reais encontrados no Google Trends Brasil, classificados por evolução e apresentados por região.",
+          "Assuntos financeiros reais encontrados em consultas específicas por UF no Google Trends, com exploração e comparação entre estados.",
       },
       { property: "og:title", content: "InvestSmart — Inteligência Regional Google Trends" },
       {
         property: "og:description",
         content:
-          "Tendências do mercado financeiro com sinais quentes, mornos e frios, de acordo com a evolução real nas UFs.",
+          "Explore termos financeiros presentes nos destaques regionais do Google Trends e compare estados sem dados simulados.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -327,9 +327,9 @@ function Sources({ feed }: { feed: FeedState }) {
     [
       "UF",
       "Google Trends por estado",
-      "RSS · ORIGEM ESTADUAL",
+      "TRENDING NOW · 7 DIAS · POR UF",
       "ok",
-      "O Radar consulta separadamente geo=BR-UF e mostra somente termos financeiros presentes no RSS daquela UF. Uma consulta sem termos financeiros não é preenchida com destaques nacionais.",
+      "Radar, Termos financeiros e Comparar Estados usam consultas geográficas independentes (geo=BR-UF) à página pública Trending Now, na janela de sete dias. A categoria Negócios e Finanças é validada com regras de pertinência. Falta de termo não é substituída por destaques nacionais.",
     ],
     [
       "ADS",
@@ -384,31 +384,29 @@ function Sources({ feed }: { feed: FeedState }) {
       <div className="method-grid" style={{ marginTop: 12 }}>
         <article className="card method">
           <span className="method-ic">FD</span>
-          <h3>Dados reais Google Trends</h3>
+          <h3>Termos descobertos por UF</h3>
           <p>
-            Nos módulos nacionais, termos do BigQuery são classificados por pertinência financeira.
-            A temperatura indica direção do interesse: quente quando cresce, morno quando estável e
-            frio quando cai. Termos sem histórico ficam como “Sem comparação”. A fonte possui
-            cobertura parcial; o Radar usa outra fonte, o RSS específico por UF.
+            Radar, Termos financeiros e Comparar Estados usam o Trending Now por localização
+            e mostram somente expressões identificadas no recorte. Um termo repetido entre UFs
+            pode ser legítimo. Nenhum número apresentado representa volume absoluto de buscas.
           </p>
         </article>
         <article className="card method">
           <span className="method-ic">TR</span>
-          <h3>Índices e comparabilidade</h3>
+          <h3>Comparabilidade e cobertura</h3>
           <p>
-            Os rótulos de temperatura não são pontuação de oportunidade, intenção de compra ou
-            quantidade de pesquisas. Cada assunto é nacional e possui séries regionais, que não
-            devem ser interpretadas como termos independentes.
+            A matriz compara a presença de termos nas UFs selecionadas, não a quantidade de
+            pesquisas. A fonte de sete dias não apresenta todas as buscas. O BigQuery nacional
+            é uma fonte distinta e não preenche lacunas nas consultas estaduais.
           </p>
         </article>
         <article className="card method">
           <span className="method-ic">↻</span>
           <h3>Verificação do feed</h3>
           <p>
-            Releitura dos feeds públicos ao abrir a plataforma, a cada 30 minutos e pela verificação
-            manual, sem novas consultas ao BigQuery. Dados com mais de 3 dias são marcados como
-            desatualizados. A verificação do feed não confirma nova extração nem agendamento
-            automático.
+            O navegador relê o feed estadual ao abrir o módulo, a cada 30 minutos e pela
+            atualização manual. Dados estaduais com mais de 12 horas são sinalizados.
+            A atualização de tela não executa nova coleta no Google.
           </p>
         </article>
         <article className="card method">
@@ -424,7 +422,7 @@ function Sources({ feed }: { feed: FeedState }) {
       <article className="card flow">
         <div className="flow-box">
           <strong>Extração validada</strong>
-          <small>RSS por UF + BigQuery nacional</small>
+          <small>Trending Now por UF + BigQuery nacional</small>
         </div>
         <span className="arrow">→</span>
         <div className="flow-box">
@@ -434,7 +432,7 @@ function Sources({ feed }: { feed: FeedState }) {
         <span className="arrow">→</span>
         <div className="flow-box">
           <strong>Radar interativo</strong>
-          <small>Descoberta estadual / evolução nacional</small>
+          <small>Exploração e comparação de termos reais por UF</small>
         </div>
       </article>
     </>
