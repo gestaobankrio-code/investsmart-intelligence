@@ -386,9 +386,9 @@ function Sources({ feed }: { feed: FeedState }) {
           <span className="method-ic">FD</span>
           <h3>Termos descobertos por UF</h3>
           <p>
-            Radar, Termos financeiros e Comparar Estados usam o Trending Now por localização
-            e mostram somente expressões identificadas no recorte. Um termo repetido entre UFs
-            pode ser legítimo. Nenhum número apresentado representa volume absoluto de buscas.
+            Radar, Termos financeiros e Comparar Estados usam o Trending Now por localização e
+            mostram somente expressões identificadas no recorte. Um termo repetido entre UFs pode
+            ser legítimo. Nenhum número apresentado representa volume absoluto de buscas.
           </p>
         </article>
         <article className="card method">
@@ -396,17 +396,17 @@ function Sources({ feed }: { feed: FeedState }) {
           <h3>Comparabilidade e cobertura</h3>
           <p>
             A matriz compara a presença de termos nas UFs selecionadas, não a quantidade de
-            pesquisas. A fonte de sete dias não apresenta todas as buscas. O BigQuery nacional
-            é uma fonte distinta e não preenche lacunas nas consultas estaduais.
+            pesquisas. A fonte de sete dias não apresenta todas as buscas. O BigQuery nacional é uma
+            fonte distinta e não preenche lacunas nas consultas estaduais.
           </p>
         </article>
         <article className="card method">
           <span className="method-ic">↻</span>
           <h3>Verificação do feed</h3>
           <p>
-            O navegador relê o feed estadual ao abrir o módulo, a cada 30 minutos e pela
-            atualização manual. Dados estaduais com mais de 12 horas são sinalizados.
-            A atualização de tela não executa nova coleta no Google.
+            O navegador relê o feed estadual ao abrir o módulo, a cada 30 minutos e pela atualização
+            manual. Dados estaduais com mais de 12 horas são sinalizados. A atualização de tela não
+            executa nova coleta no Google.
           </p>
         </article>
         <article className="card method">
