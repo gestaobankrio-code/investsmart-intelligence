@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { UFS, UF_NAMES, norm } from "@/lib/intelligence";
 import { fmtDate, fmtDateTime } from "@/lib/trends-feed";
-import { groupRegionalTopics } from "@/lib/regional-insights";
+import { groupRegionalTopics, topicKey } from "@/lib/regional-insights";
 import { useRegionalFeed } from "@/hooks/useRegionalFeed";
 import {
   RegionalAwait,
@@ -37,7 +37,7 @@ export function FinancialTermsPage({
   const [uf, setUf] = useState("");
   const [sort, setSort] = useState<SortMode>("recent");
   const [scope, setScope] = useState<RegionFilter>("all");
-  const [selectedKey, setSelectedKey] = useState("");
+  const [selectedKey, setSelectedKey] = useState(topicKey(focusTerm));
 
   const terms = useMemo(() => groupRegionalTopics(state.feed?.records ?? []), [state.feed]);
   const shown = useMemo(() => {
