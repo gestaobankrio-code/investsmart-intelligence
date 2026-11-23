@@ -61,7 +61,7 @@ export function StateRadar({
           count: c.records ?? 0,
           peak: c.records,
           hot: true,
-          title: UF_NAMES[c.uf] + " · " + c.records + " tendência(s) financeira(s) no RSS estadual",
+          title: UF_NAMES[c.uf] + " · " + c.records + " tendência(s) financeira(s) na consulta da UF",
         })),
     [feed],
   );
@@ -93,6 +93,7 @@ export function StateRadar({
 
   const ageHours = (Date.now() - Date.parse(feed.generatedAt)) / 3600000;
   const sourceOld = !Number.isFinite(ageHours) || ageHours > 12;
+  const usingFullPage = feed.extraction === "google_trends_pagina_regional_7d";
   const noFinanceResults = feed.availability === "sem_termos_no_recorte";
   return (
     <>
@@ -106,7 +107,7 @@ export function StateRadar({
               ? "CONSULTAS CONCLUÍDAS · SEM TERMOS FINANCEIROS NA AMOSTRA"
               : "TENDÊNCIAS FINANCEIRAS ENCONTRADAS EM CADA ESTADO"}
           </strong>
-          {" · "}Fonte: Google Trends Trending Now RSS (geo=BR-UF)
+          {" · "}Fonte: Google Trends Trending Now {usingFullPage ? "· últimos 7 dias" : "RSS"} (geo=BR-UF)
           {" · "}Última consulta: {fmtDateTime(feed.generatedAt)}
           {error && <> · Última atualização falhou; exibindo coleta anterior</>}
         </span>
@@ -121,9 +122,10 @@ export function StateRadar({
       <div className="notice">
         <span>
           <strong>Como funciona:</strong> cada estado recebe exclusivamente os assuntos retornados
-          em sua própria consulta ao Google. O RSS apresenta apenas uma amostra das tendências
-          recentes. Uma consulta válida pode retornar zero termos classificados como financeiros;
-          isso não demonstra ausência de pesquisas financeiras na UF.
+          em sua própria consulta ao Google. {usingFullPage
+            ? "A página de tendências é consultada na janela de sete dias; apenas assuntos da categoria Negócios e Finanças com relevância financeira reconhecida são exibidos."
+            : "O RSS oferece uma amostra limitada de tendências recentes."}
+          {" "}Nenhum termo encontrado não significa ausência de pesquisas financeiras na UF.
         </span>
       </div>
       <div className="filters">
@@ -147,11 +149,11 @@ export function StateRadar({
         {(
           [
             ["UFs consultadas", feed.responded + "/27", "Consultas por código geográfico"],
-            ["UFs com tendências", feed.withFinance, "Resultado financeiro identificado no RSS"],
+            ["UFs com tendências", feed.withFinance, "Resultados financeiros na fonte estadual"],
             [
               "Termos capturados",
               feed.records.length,
-              "Ocorrências efetivamente publicadas pelo Google",
+              "Ocorrências verificadas por UF e categoria",
             ],
             ["Nesta UF", list.length, "Sem completar dados ausentes"],
           ] as [string, string | number, string][]
@@ -179,7 +181,7 @@ export function StateRadar({
             uf={uf}
             focusUF={selectedUF}
             onSelect={selectState}
-            hint="Roxo indica que a consulta daquele estado retornou ao menos um assunto financeiro. Não representa volume de pesquisas."
+            hint="Roxo indica ao menos um assunto financeiro identificado na UF. Não representa volume de buscas."
             hotLabel="Tendência financeira encontrada na UF"
             coldLabel="Sem resultado financeiro no recorte"
           />
@@ -191,7 +193,7 @@ export function StateRadar({
             Estes termos foram encontrados diretamente na consulta geográfica BR-{selectedUF}, e não
             herdados dos destaques nacionais.
           </div>
-          <div className="detail-section">TENDÊNCIAS FINANCEIRAS DO ESTADO</div>
+          <div className="detail-section">TENDÊNCIAS FINANCEIRAS ENCONTRADAS NA UF</div>
           {coverage?.status === "falha_consulta" ? (
             <div className="empty">
               A consulta desta UF falhou. Não há dados estaduais comprovados para apresentar.
@@ -223,8 +225,8 @@ export function StateRadar({
             </div>
           ) : (
             <div className="empty">
-              Não foram identificadas tendências financeiras entre os resultados recentes do Google
-              Trends nesta UF. Isso não indica zero buscas ou ausência de interesse.
+              Nenhuma tendência financeira foi identificada na amostra do Google Trends desta UF.
+              Isso não indica zero buscas ou ausência de interesse.
             </div>
           )}
           {loading && (
