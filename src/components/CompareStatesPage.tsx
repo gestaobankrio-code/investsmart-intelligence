@@ -7,7 +7,6 @@ import {
   MapPin,
   Minus,
   Plus,
-  RefreshCw,
   Search,
   X,
 } from "lucide-react";
