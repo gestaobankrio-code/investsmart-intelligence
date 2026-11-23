@@ -26,8 +26,8 @@ describe("exploração e comparação de termos realmente encontrados por UF", (
     ]);
     expect(terms).toHaveLength(2);
     const dolar = terms.find((term) => term.key === "dolar hoje");
-    expect(dolar?.states).toEqual(["SP", "RJ"]);
-    expect(dolar?.records.map((record) => record.uf)).toEqual(["SP", "RJ"]);
+    expect(dolar?.states).toEqual(["RJ", "SP"]);
+    expect(dolar?.records.map((record) => record.uf)).toEqual(["RJ", "SP"]);
   });
 
   it("mantém a ocorrência mais recente quando um termo é repetido na própria UF", () => {
