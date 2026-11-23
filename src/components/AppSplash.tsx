@@ -19,7 +19,10 @@ export function AppSplash() {
 
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const close = window.setTimeout(() => setVisible(false), reducedMotion ? 120 : SPLASH_DURATION_MS);
+    const close = window.setTimeout(
+      () => setVisible(false),
+      reducedMotion ? 120 : SPLASH_DURATION_MS,
+    );
     const steps = reducedMotion
       ? []
       : [
